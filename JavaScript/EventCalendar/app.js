@@ -51,10 +51,14 @@ function app(containerId) {
   const watchedState = onChange(initialState, render(containers));
   const currentDate = new Date(new Date().setHours(0, 0, 0, 0));
 
+  const storedEvents = JSON.parse(localStorage.getItem("calendar-events")) || [];
+
+  /**
+   * initialising calendar values and fires first
+   * rerendering of the app
+   */
   watchedState.uiState.currentDate = currentDate;
   watchedState.uiState.selectedDate = new Date(currentDate);
-
-  const storedEvents = JSON.parse(localStorage.getItem("calendar-events")) || [];
   watchedState.events = storedEvents.map((event) => ({
     ...event,
     createdAt: new Date(event.createdAt),
