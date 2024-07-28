@@ -50,7 +50,6 @@ function app(containerId) {
   const containers = initLayout(containerId);
   const watchedState = onChange(initialState, render(containers));
   const currentDate = new Date(new Date().setHours(0, 0, 0, 0));
-
   const storedEvents = JSON.parse(localStorage.getItem("calendar-events")) || [];
 
   /**
@@ -79,7 +78,6 @@ function app(containerId) {
           renderEvents(this, containers.events);
           break;
         }
-
         case "uiState.isEventsOpen": {
           renderCalendarGrid(this, containers.grid);
           renderEvents(this, containers.events);
@@ -335,7 +333,7 @@ function app(containerId) {
   }
 
   // Just simple utility function
-  function createElement(tagName, props) {
+  function createElement(tagName, props = {}) {
     const element = document.createElement(tagName);
 
     for (let prop in props) {
