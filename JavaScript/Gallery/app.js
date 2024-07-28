@@ -46,11 +46,7 @@ function app(containerId) {
     };
   }
 
-  /**
-   * this function creates and configure contacts list
-   * also it shows contact card or contact edit form,
-   * depending on editId state propery
-   */
+  /** this function creates and configure gallery images */
   function renderGallery(state, listEl) {
     listEl.innerHTML = "";
     const imageCards = state.images.map((image) => {
@@ -108,6 +104,7 @@ function app(containerId) {
     listEl.append(...imageCards);
   }
 
+  /** this function creates and configure lightbox */
   function renderLightBox(state, lightboxEl) {
     lightboxEl.innerHTML = "";
 
@@ -120,41 +117,63 @@ function app(containerId) {
 
     const currentIndex = images.findIndex((image) => image.id === lightBoxImgId);
     const currentImage = images.at(currentIndex);
+
     const nextSlide = images.at(currentIndex + 1)?.id || images.at(0).id;
     const prevSlide = images.at(currentIndex - 1)?.id || images.at(-1).id;
 
-    const ligtBoxWrapperEl = createElement("div", {
-      className: "lightbox",
-    });
+    const elementsConfig = [
+      {
+        tagName: "div",
+        options: { className: "lightbox" },
+      },
+      {
+        tagName: "div",
+        options: { className: "lightbox__inner" },
+      },
+      {
+        tagName: "div",
+        options: { className: "lightbox__img" },
+      },
+      {
+        tagName: "img",
+        options: {
+          className: "lightbox__img-item",
+          src: currentImage.url,
+          alt: currentImage.description,
+        },
+      },
+      {
+        tagName: "p",
+        options: {
+          className: "lightbox__derscription",
+          textContent: currentImage.description,
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          textContent: "Next Image",
+          className: "btn lightbox__btn lightbox__btn--prev",
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          textContent: "Next Image",
+          className: "btn lightbox__btn lightbox__btn--prev",
+        },
+      },
+    ];
 
-    const ligtBoxInnerEl = createElement("div", {
-      className: "lightbox__inner",
-    });
-
-    const imageContainerEl = createElement("div", {
-      className: "lightbox__img",
-    });
-
-    const imageEl = createElement("img", {
-      src: currentImage.url,
-      className: "lightbox__img-item",
-      alt: currentImage.description,
-    });
-
-    const imageDescriptionEl = createElement("p", {
-      className: "lightbox__derscription",
-      textContent: currentImage.description,
-    });
-
-    const nextBtn = createElement("button", {
-      textContent: "Next Image",
-      className: "btn lightbox__btn lightbox__btn--prev",
-    });
-
-    const prevBtn = createElement("button", {
-      textContent: "Previous Image",
-      className: "btn lightbox__btn lightbox__btn--next",
-    });
+    const [
+      ligtBoxWrapperEl,
+      ligtBoxInnerEl,
+      imageContainerEl,
+      imageEl,
+      imageDescriptionEl,
+      nextBtn,
+      prevBtn,
+    ] = elementsConfig.map(({ tagName, options }) => createElement(tagName, options));
 
     ligtBoxWrapperEl.addEventListener("click", (e) => {
       if (e.target === e.currentTarget) {
