@@ -41,7 +41,7 @@ function app(containerId) {
     return function (path, value, prevValue) {
       switch (path) {
         case "tasks": {
-          storeTasks(this);
+          storeData("tasks", this.tasks);
         }
         case "uiState.filterBy": {
           renderHeader(this, containers.header);
@@ -53,23 +53,27 @@ function app(containerId) {
   }
 
   /** this function creates and configure header (filters) */
-  function renderHeader(state, headerEl) {
-    headerEl.innerHTML = "";
+  function renderHeader(state, containerEl) {
+    containerEl.innerHTML = "";
 
     const { filterBy } = state.uiState;
+
     const filterButtons = FILTERS_MAP.map((filter) => {
       const isActive = filterBy === filter;
+
       const filterBtn = createElement("button", {
         className: `btn ${isActive ? "btn--yellow" : ""}`,
         textContent: filter,
       });
+
       filterBtn.dataset.filter = filter;
+
       return filterBtn;
     });
 
-    headerEl.append(...filterButtons);
+    containerEl.append(...filterButtons);
 
-    headerEl.addEventListener("click", (e) => {
+    containerEl.addEventListener("click", (e) => {
       if (e.target.classList.contains("btn")) {
         state.uiState.filterBy = e.target.dataset.filter;
       }
@@ -95,34 +99,47 @@ function app(containerId) {
   }
 
   /** this function creates and configure tasks list */
-  function renderTasks(state, listEl) {
-    listEl.innerHTML = "";
+  function renderTasks(state, containerEl) {
+    containerEl.innerHTML = "";
 
     const filteredTasks = handleFilterTasks(state);
 
     const tasksCards = filteredTasks.map((task) => {
-      const card = createElement("article", {
-        className: "task-card todo-list__task-card",
-        innerHTML: `
-          <div class="task-card__inner">
-            <h3 class="task-card__title">
-              ${task.completed ? "&#9989;" : ""}
-              ${task.title}
-            </h3>
-            <p class="task-card__description">${task.description}</p>
-          </div>
-          `,
-      });
+      const elementsConfig = [
+        {
+          tagName: "article",
+          options: {
+            className: "task-card todo-list__task-card",
+            innerHTML: `
+              <div class="task-card__inner">
+                <h3 class="task-card__title">
+                  ${task.completed ? "&#9989;" : ""}
+                  ${task.title}
+                </h3>
+                <p class="task-card__description">${task.description}</p>
+              </div>
+            `,
+          },
+        },
+        {
+          tagName: "button",
+          options: {
+            className: "btn btn--grey btn--small task-card__btn",
+            textContent: "Delete",
+          },
+        },
+        {
+          tagName: "button",
+          options: {
+            className: "btn btn--yellow btn--small task-card__btn",
+            textContent: `mark as ${task.completed ? "incomplete" : "complete"}`,
+          },
+        },
+      ];
 
-      const deleteBtn = createElement("button", {
-        className: "btn btn--grey btn--small task-card__btn",
-        textContent: "Delete",
-      });
-
-      const toggleCompleteBtn = createElement("button", {
-        className: "btn btn--yellow btn--small task-card__btn",
-        textContent: `mark as ${task.completed ? "incomplete" : "complete"}`,
-      });
+      const [cardEl, deleteBtn, toggleCompleteBtn] = elementsConfig.map(
+        ({ tagName, options }) => createElement(tagName, options)
+      );
 
       deleteBtn.addEventListener("click", () => {
         state.tasks = state.tasks.filter((t) => t.id !== task.id);
@@ -134,9 +151,9 @@ function app(containerId) {
         );
       });
 
-      card.append(deleteBtn, toggleCompleteBtn);
+      cardEl.append(deleteBtn, toggleCompleteBtn);
 
-      return card;
+      return cardEl;
     });
 
     if (tasksCards.length === 0) {
@@ -148,34 +165,50 @@ function app(containerId) {
       );
     }
 
-    listEl.append(...tasksCards);
+    containerEl.append(...tasksCards);
   }
 
   /** this function creates and configure footer (add form) */
-  function renderFooter(state, footerEl) {
-    footerEl.innerHTML = "";
+  function renderFooter(state, containerEl) {
+    containerEl.innerHTML = "";
 
-    const formEl = createElement("form", { className: "add-form" });
+    const elementsConfig = [
+      {
+        tagName: "form",
+        options: { className: "add-form" },
+      },
+      {
+        tagName: "input",
+        options: {
+          type: "text",
+          name: "title",
+          className: "input-text input-text--white",
+          required: true,
+          placeholder: "Task title",
+        },
+      },
+      {
+        tagName: "textarea",
+        options: {
+          name: "description",
+          className: "textarea textarea--white",
+          required: true,
+          placeholder: "Task description",
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          className: "btn btn--large btn--white",
+          textContent: "Add new task",
+          type: "submit",
+        },
+      },
+    ];
 
-    const titleEl = createElement("input", {
-      type: "text",
-      name: "title",
-      className: "input-text input-text--white",
-      required: true,
-      placeholder: "Task title",
-    });
-    const descriptionEl = createElement("textarea", {
-      name: "description",
-      className: "textarea textarea--white",
-      required: true,
-      placeholder: "Task description",
-    });
-
-    const submitBtn = createElement("button", {
-      className: "btn btn--large btn--white",
-      textContent: "Add new task",
-      type: "submit",
-    });
+    const [formEl, titleEl, descriptionEl, submitBtn] = elementsConfig.map(
+      ({ tagName, options }) => createElement(tagName, options)
+    );
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -187,11 +220,11 @@ function app(containerId) {
     });
 
     formEl.append(titleEl, descriptionEl, submitBtn);
-    footerEl.append(formEl);
+    containerEl.append(formEl);
   }
 
-  function storeTasks(state) {
-    localStorage.setItem("tasks", JSON.stringify(state.tasks));
+  function storeData(propName, data) {
+    localStorage.setItem(propName, JSON.stringify(data));
   }
 
   /** this function creates, configure and returns main layout containers */

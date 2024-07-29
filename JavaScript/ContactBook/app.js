@@ -43,7 +43,7 @@ function app(containerId) {
     return function (path, value, prevValue) {
       switch (path) {
         case "contacts": {
-          storeContacts(this);
+          storeData("contacts", this.contacts);
           renderHeader(this, containers.header);
           renderFooter(this, containers.footer);
         }
@@ -56,8 +56,8 @@ function app(containerId) {
   }
 
   /** this function creates and configure header (filters) */
-  function renderHeader(state, headerEl) {
-    headerEl.innerHTML = "";
+  function renderHeader(state, containerEl) {
+    containerEl.innerHTML = "";
 
     const searchInputEl = createElement("input", {
       type: "text",
@@ -71,7 +71,7 @@ function app(containerId) {
       state.uiState.searchQuery = e.target.value.trim();
     });
 
-    headerEl.append(searchInputEl);
+    containerEl.append(searchInputEl);
 
     if (state.uiState.searchQuery) {
       searchInputEl.focus();
@@ -97,8 +97,8 @@ function app(containerId) {
    * also it shows contact card or contact edit form,
    * depending on editId state propery
    */
-  function renderContacts(state, listEl) {
-    listEl.innerHTML = "";
+  function renderContacts(state, containerEl) {
+    containerEl.innerHTML = "";
     const FoundedContacts = handleSearch(state);
     const contactCards = FoundedContacts.map((contact) => {
       const isEditing = contact.id === state.uiState.editId;
@@ -117,44 +117,59 @@ function app(containerId) {
       );
     }
 
-    listEl.append(...contactCards);
+    containerEl.append(...contactCards);
   }
 
   /** this function creates and configure edit form */
   function renderContactEditForm(state, contact) {
-    const formEl = createElement("form", {
-      className: "contact-book__edit-form edit-form",
-      innerHTML: `
-        <div class="edit-form__inner">
-          <input
-            type="text"
-            name="name"
-            class="input-text edit-form__input"
-            placeholder="Contact name"
-            value="${contact.name}"
-            required>
-          <input
-            type="tel"
-            name="phone"
-            class="input-text edit-form__input"
-            placeholder="Contact name"
-            value="${contact.phone}"
-            required>
-        </div>
-      `,
-    });
+    const elementsConfig = [
+      {
+        tagName: "form",
+        options: {
+          className: "contact-book__edit-form edit-form",
+          innerHTML: `
+            <div class="edit-form__inner">
+              <input
+                type="text"
+                name="name"
+                class="input-text edit-form__input"
+                placeholder="Contact name"
+                value="${contact.name}"
+                required
+              >
+              <input
+                type="tel"
+                name="phone"
+                class="input-text edit-form__input"
+                placeholder="Contact name"
+                value="${contact.phone}"
+                required
+              >
+            </div>
+          `,
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          className: "btn btn--small btn--yellow edit-form__btn",
+          textContent: "Save",
+          type: "submit",
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          className: "btn btn--small btn--grey edit-form__btn",
+          textContent: "Cancel",
+          type: "reset",
+        },
+      },
+    ];
 
-    const submitBtn = createElement("button", {
-      className: "btn btn--small btn--yellow edit-form__btn",
-      textContent: "Save",
-      type: "submit",
-    });
-
-    const cancelBtn = createElement("button", {
-      className: "btn btn--small btn--grey edit-form__btn",
-      textContent: "Cancel",
-      type: "reset",
-    });
+    const [formEl, submitBtn, cancelBtn] = elementsConfig.map(({ tagName, options }) =>
+      createElement(tagName, options)
+    );
 
     formEl.append(submitBtn, cancelBtn);
 
@@ -181,27 +196,40 @@ function app(containerId) {
 
   /** this function creates and configure contact card */
   function renderContactCard(state, contact) {
-    const card = createElement("article", {
-      className: "contact-card contact-book__card",
-      innerHTML: `
-        <div class="contact-card__inner">
-          <h3 class="contact-card__title">
-            ${contact.name}
-          </h3>
-          <p class="contact-card__description">${contact.phone}</p>
-        </div>
-        `,
-    });
+    const elementsConfig = [
+      {
+        tagName: "article",
+        options: {
+          className: "contact-card contact-book__card",
+          innerHTML: `
+            <div class="contact-card__inner">
+              <h3 class="contact-card__title">
+                ${contact.name}
+              </h3>
+              <p class="contact-card__description">${contact.phone}</p>
+            </div>
+          `,
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          className: "btn btn--grey btn--small contact-card__btn",
+          textContent: "Delete",
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          className: "btn btn--yellow btn--small contact-card__btn",
+          textContent: `Edit`,
+        },
+      },
+    ];
 
-    const deleteBtn = createElement("button", {
-      className: "btn btn--grey btn--small contact-card__btn",
-      textContent: "Delete",
-    });
-
-    const editBtn = createElement("button", {
-      className: "btn btn--yellow btn--small contact-card__btn",
-      textContent: `Edit`,
-    });
+    const [cardEl, deleteBtn, editBtn] = elementsConfig.map(({ tagName, options }) =>
+      createElement(tagName, options)
+    );
 
     editBtn.addEventListener("click", () => {
       state.uiState.editId = contact.id;
@@ -211,40 +239,53 @@ function app(containerId) {
       state.contacts = state.contacts.filter((t) => t.id !== contact.id);
     });
 
-    card.append(deleteBtn, editBtn);
+    cardEl.append(deleteBtn, editBtn);
 
-    return card;
+    return cardEl;
   }
 
   /** this function creates and configure footer (add form) */
-  function renderFooter(state, footerEl) {
-    footerEl.innerHTML = "";
+  function renderFooter(state, containerEl) {
+    containerEl.innerHTML = "";
 
-    const formEl = createElement("form", {
-      className: "add-form",
-    });
+    const elementsConfig = [
+      {
+        tagName: "form",
+        options: { className: "add-form" },
+      },
+      {
+        tagName: "input",
+        options: {
+          type: "text",
+          name: "name",
+          className: "input-text input-text--white form__input",
+          required: true,
+          placeholder: "Contact name",
+        },
+      },
+      {
+        tagName: "input",
+        options: {
+          type: "tel",
+          name: "phone",
+          className: "input-text input-text--white form__input",
+          required: true,
+          placeholder: "Contact phone",
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          className: "btn btn--large btn--white",
+          textContent: "Add new contact",
+          type: "submit",
+        },
+      },
+    ];
 
-    const titleEl = createElement("input", {
-      type: "text",
-      name: "name",
-      className: "input-text input-text--white form__input",
-      required: true,
-      placeholder: "Contact name",
-    });
-
-    const telEl = createElement("input", {
-      type: "tel",
-      name: "phone",
-      className: "input-text input-text--white form__input",
-      required: true,
-      placeholder: "Contact phone",
-    });
-
-    const submitBtn = createElement("button", {
-      className: "btn btn--large btn--white",
-      textContent: "Add new contact",
-      type: "submit",
-    });
+    const [formEl, titleEl, telEl, submitBtn] = elementsConfig.map(
+      ({ tagName, options }) => createElement(tagName, options)
+    );
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -257,11 +298,11 @@ function app(containerId) {
     });
 
     formEl.append(titleEl, telEl, submitBtn);
-    footerEl.append(formEl);
+    containerEl.append(formEl);
   }
 
-  function storeContacts(state) {
-    localStorage.setItem("contacts", JSON.stringify(state.contacts));
+  function storeData(propName, data) {
+    localStorage.setItem(propName, JSON.stringify(data));
   }
 
   /** this function creates, configure and returns main layout containers */

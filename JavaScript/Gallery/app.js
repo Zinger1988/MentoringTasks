@@ -34,7 +34,7 @@ function app(containerId) {
     return function (path, value, prevValue) {
       switch (path) {
         case "images": {
-          storeImages(this);
+          storeData("images", this.images);
           renderFooter(this, containers.footer);
           renderGallery(this, containers.list);
           break;
@@ -47,39 +47,53 @@ function app(containerId) {
   }
 
   /** this function creates and configure gallery images */
-  function renderGallery(state, listEl) {
-    listEl.innerHTML = "";
+  function renderGallery(state, containerEl) {
+    containerEl.innerHTML = "";
     const imageCards = state.images.map((image) => {
-      const card = createElement("div", {
-        className: "gallery-card",
-      });
+      const elementsConfig = [
+        {
+          tagName: "div",
+          options: { className: "gallery-card" },
+        },
+        {
+          tagName: "a",
+          options: {
+            className: "gallery-card__link",
+            href: image.url,
+          },
+        },
+        {
+          tagName: "img",
+          options: {
+            className: "gallery-card__img-item",
+            src: image.url,
+            alt: image.description,
+          },
+        },
+        {
+          tagName: "a",
+          options: {
+            className: "gallery-card__description",
+            textContent: image.description,
+            href: image.url,
+          },
+        },
+        {
+          tagName: "button",
+          options: {
+            className: "btn btn--grey btn--small gallery-card__delete-btn",
+            textContent: "Delete",
+          },
+        },
+      ];
 
-      const imgAnchorEl = createElement("a", {
-        className: "gallery-card__link",
-        href: image.url,
-      });
+      const [cardEl, imgAnchorEl, imageEl, imageDescEl, deleteBtn] = elementsConfig.map(
+        ({ tagName, options }) => createElement(tagName, options)
+      );
 
       imgAnchorEl.addEventListener("click", (e) => {
         e.preventDefault();
-
         state.uiState.lightBoxImgId = image.id;
-      });
-
-      const imageEl = createElement("img", {
-        className: "gallery-card__img-item",
-        src: image.url,
-        alt: image.description,
-      });
-
-      const imageDesc = createElement("a", {
-        className: "gallery-card__description",
-        textContent: image.description,
-        href: image.url,
-      });
-
-      const deleteBtn = createElement("button", {
-        className: "btn btn--grey btn--small gallery-card__delete-btn",
-        textContent: "Delete",
       });
 
       deleteBtn.addEventListener("click", () => {
@@ -87,9 +101,9 @@ function app(containerId) {
       });
 
       imgAnchorEl.append(imageEl);
-      card.append(imgAnchorEl, imageDesc, deleteBtn);
+      cardEl.append(imgAnchorEl, imageDescEl, deleteBtn);
 
-      return card;
+      return cardEl;
     });
 
     if (imageCards.length === 0) {
@@ -101,12 +115,12 @@ function app(containerId) {
       );
     }
 
-    listEl.append(...imageCards);
+    containerEl.append(...imageCards);
   }
 
   /** this function creates and configure lightbox */
-  function renderLightBox(state, lightboxEl) {
-    lightboxEl.innerHTML = "";
+  function renderLightBox(state, containerEl) {
+    containerEl.innerHTML = "";
 
     if (!state.uiState.lightBoxImgId) {
       return;
@@ -131,10 +145,6 @@ function app(containerId) {
         options: { className: "lightbox__inner" },
       },
       {
-        tagName: "div",
-        options: { className: "lightbox__img" },
-      },
-      {
         tagName: "img",
         options: {
           className: "lightbox__img-item",
@@ -152,7 +162,7 @@ function app(containerId) {
       {
         tagName: "button",
         options: {
-          textContent: "Next Image",
+          textContent: "Previous Image",
           className: "btn lightbox__btn lightbox__btn--prev",
         },
       },
@@ -168,11 +178,10 @@ function app(containerId) {
     const [
       ligtBoxWrapperEl,
       ligtBoxInnerEl,
-      imageContainerEl,
       imageEl,
       imageDescriptionEl,
-      nextBtn,
       prevBtn,
+      nextBtn,
     ] = elementsConfig.map(({ tagName, options }) => createElement(tagName, options));
 
     ligtBoxWrapperEl.addEventListener("click", (e) => {
@@ -189,41 +198,53 @@ function app(containerId) {
       state.uiState.lightBoxImgId = prevSlide;
     });
 
-    imageContainerEl.append(imageEl);
-    ligtBoxInnerEl.append(imageContainerEl, imageDescriptionEl, prevBtn, nextBtn);
+    ligtBoxInnerEl.append(imageEl, imageDescriptionEl, prevBtn, nextBtn);
     ligtBoxWrapperEl.append(ligtBoxInnerEl);
-    lightboxEl.append(ligtBoxWrapperEl);
+    containerEl.append(ligtBoxWrapperEl);
   }
 
   /** this function creates and configure footer (add form) */
-  function renderFooter(state, footerEl) {
-    footerEl.innerHTML = "";
+  function renderFooter(state, containerEl) {
+    containerEl.innerHTML = "";
 
-    const formEl = createElement("form", {
-      className: "add-form",
-    });
+    const elementsConfig = [
+      {
+        tagName: "form",
+        options: { className: "add-form" },
+      },
+      {
+        tagName: "input",
+        options: {
+          type: "url",
+          name: "url",
+          className: "input-text input-text--white form__input",
+          required: true,
+          placeholder: "Image URL",
+        },
+      },
+      {
+        tagName: "input",
+        options: {
+          type: "text",
+          name: "description",
+          className: "input-text input-text--white form__input",
+          required: true,
+          placeholder: "Image description",
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          className: "btn btn--large btn--white",
+          textContent: "Add new image",
+          type: "submit",
+        },
+      },
+    ];
 
-    const titleEl = createElement("input", {
-      type: "url",
-      name: "url",
-      className: "input-text input-text--white form__input",
-      required: true,
-      placeholder: "Image URL",
-    });
-
-    const telEl = createElement("input", {
-      type: "text",
-      name: "description",
-      className: "input-text input-text--white form__input",
-      required: true,
-      placeholder: "Image description",
-    });
-
-    const submitBtn = createElement("button", {
-      className: "btn btn--large btn--white",
-      textContent: "Add new image",
-      type: "submit",
-    });
+    const [formEl, titleEl, descriptionEl, submitBtn] = elementsConfig.map(
+      ({ tagName, options }) => createElement(tagName, options)
+    );
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -234,12 +255,12 @@ function app(containerId) {
       state.images.push({ id: uid(), ...imageData });
     });
 
-    formEl.append(titleEl, telEl, submitBtn);
-    footerEl.append(formEl);
+    formEl.append(titleEl, descriptionEl, submitBtn);
+    containerEl.append(formEl);
   }
 
-  function storeImages(state) {
-    localStorage.setItem("images", JSON.stringify(state.images));
+  function storeData(propName, data) {
+    localStorage.setItem(propName, JSON.stringify(data));
   }
 
   /** this function creates, configure and returns main layout containers */

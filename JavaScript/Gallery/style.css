@@ -66,12 +66,12 @@
   white-space: nowrap;
 }
 
-.btn:focus {
-  text-decoration: none;
-}
-
+.btn:focus,
 .btn:hover {
   text-decoration: none;
+  text-decoration: none;
+
+  background-color: rgb(60, 60, 60);
 }
 
 .btn:active {
@@ -85,15 +85,27 @@
   color: black;
 }
 
+.btn--yellow:hover {
+  background-color: rgb(235, 235, 0);
+}
+
 .btn--grey {
   background-color: rgb(228, 228, 228);
   color: black;
+}
+
+.btn--grey:hover {
+  background-color: rgb(216, 216, 216);
 }
 
 .btn--white {
   background-color: #fff;
   color: black;
   box-shadow: black 4px 4px 0 0, white 4px 4px 0 1px;
+}
+
+.btn--white:hover {
+  background-color: rgb(230, 230, 230);
 }
 
 .btn--small {

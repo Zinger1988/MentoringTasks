@@ -1,5 +1,5 @@
 :root {
-  font: 12px/20px Arial, sans-serif;
+  font: 14px/1.5 Arial, sans-serif;
   color: black;
 }
 
@@ -29,11 +29,12 @@
 
 .input-text::placeholder,
 .textarea::placeholder {
-  color: lightgrey;
+  color: rgb(151, 151, 151);
 }
 
 .textarea {
   min-height: 100px;
+  resize: vertical;
 }
 
 .input-text--white,
@@ -127,14 +128,86 @@
 
 /*#endregion btn ---------------------------------------------*/
 
-/*#region contact-book ---------------------------------------*/
+/*#region article --------------------------------------------*/
 
-.contact-book {
+.demo-post {
+  max-width: 700px;
+  margin: 0 auto 20px;
+  padding: 30px 40px 40px;
+  border: 1px solid black;
+}
+
+/*#region article --------------------------------------------*/
+
+/*#region comment card ---------------------------------------*/
+
+.comment-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  padding: 20px;
+  justify-content: flex-end;
+}
+
+.comment-card--reply {
+  padding-left: 100px;
+  position: relative;
+}
+
+.comment-card--reply::before {
+  content: "\2BA4";
+  position: absolute;
+  left: 50px;
+  top: 44px;
+  font-size: 36px;
+}
+
+.comment-card__author {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 0 0 0 15px;
+}
+
+.comment-card__publish-date {
+  flex: 0 0 auto;
+}
+
+.comment-card__text {
+  flex: 1 0 100%;
+  padding: 15px;
+  background-color: whitesmoke;
+}
+
+.comment-card__reply {
+  flex: 1 0 100%;
+  margin-top: 20px;
+}
+
+/*#endregion comment card ------------------------------------*/
+
+/*#region reply-form -----------------------------------------*/
+
+.reply-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+  padding: 20px;
+  background-color: rgb(214, 214, 214);
+}
+
+/*#endregion reply-form --------------------------------------*/
+
+/*#region comments -------------------------------------------*/
+
+.comments {
   max-width: 700px;
   margin: 0 auto;
 }
 
-.contact-book__header {
+.comments__header {
   display: flex;
   gap: 20px;
   padding: 18px 18px 20px;
@@ -143,61 +216,39 @@
   background-color: lightgray;
 }
 
-.contact-book__search {
-  width: 100%;
-}
-
-.contact-book__search::placeholder {
-  color: grey;
-}
-
-.contact-book__contacts {
+.comments__tasks {
   border: 1px solid black;
   border-top: none;
   margin-bottom: 20px;
 }
 
-.contact-book__card {
+.comments__task-card {
   border-bottom: 1px solid black;
 }
 
-.contact-book__card:last-child {
+.comments__task-card:last-child {
   border-bottom: none;
 }
 
-/*#endregion contact-book ------------------------------------*/
-
-/*#region contact-card ---------------------------------------*/
-
-.contact-card {
-  padding: 20px;
-  display: grid;
-  align-items: start;
-  gap: 10px 20px;
-  grid-template-columns: 1fr 170px;
-  grid-template-rows: min-content 1fr;
+.comments__list {
+  border: 1px solid black;
 }
 
-.contact-card__title {
-  font-size: 18px;
-  font-weight: bold;
-  margin: 0 0 10px;
-}
-
-.contact-card__inner {
-  grid-column: 1;
-  grid-row: 1 / span 2;
-}
-
-.contact-card__description {
+.comments__list ul {
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.contact-card__btn {
-  grid-column: 2;
+.comments__list li:last-child .comments__card:last-child {
+  border-bottom: none;
 }
 
-/*#endregion contact-card ------------------------------------*/
+.comments__card {
+  border-bottom: 1px solid black;
+}
+
+/*#endregion comments ----------------------------------------*/
 
 /*#region add-form -------------------------------------------*/
 
@@ -212,35 +263,3 @@
 }
 
 /*#endregion add-form ----------------------------------------*/
-
-/*#region edit-form ------------------------------------------*/
-
-.edit-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 20px 10px;
-  padding: 20px 20px 30px;
-  border-bottom: 1px solid black;
-  background-color: silver;
-}
-
-.edit-form:last-child {
-  border-bottom: none;
-}
-
-.edit-form__inner {
-  flex: 1 0 100%;
-}
-
-.edit-form__input {
-  flex: 1 0 auto;
-  font-size: 18px;
-}
-
-.edit-form__btn {
-  min-width: 160px;
-}
-
-/*#endregion edit-form ----------------------------------------*/

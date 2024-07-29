@@ -22,21 +22,21 @@ import { uid } from "https://cdn.jsdelivr.net/npm/uid@2.0.2/+esm";
 
 function app(containerId) {
   const MONTH_MAP = [
-    "січ",
-    "лют",
-    "бер",
-    "кві",
-    "тра",
-    "чер",
-    "лип",
-    "сер",
-    "вер",
-    "жов",
-    "лис",
-    "гру",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
 
-  const WEEK_DAY_MAP = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+  const WEEK_DAY_MAP = ["Mon", "Tur", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const initialState = {
     events: [],
@@ -50,7 +50,7 @@ function app(containerId) {
   const containers = initLayout(containerId);
   const watchedState = onChange(initialState, render(containers));
   const currentDate = new Date(new Date().setHours(0, 0, 0, 0));
-  const storedEvents = JSON.parse(localStorage.getItem("calendar-events")) || [];
+  const storedEvents = JSON.parse(localStorage.getItem("events")) || [];
 
   /**
    * initialising calendar values and fires first
@@ -71,7 +71,7 @@ function app(containerId) {
     return function (path, value, prevValue) {
       switch (path) {
         case "events":
-          storeEvents(this);
+          storeData("events", this.events);
         case "uiState.selectedDate": {
           renderCalendarHead(this, containers.head);
           renderCalendarGrid(this, containers.grid);
@@ -80,6 +80,7 @@ function app(containerId) {
         }
         case "uiState.isEventsOpen": {
           renderCalendarGrid(this, containers.grid);
+          renderEventForm(this, containers.form);
           renderEvents(this, containers.events);
           break;
         }
@@ -87,36 +88,48 @@ function app(containerId) {
     };
   }
 
-  function storeEvents(state) {
-    localStorage.setItem("calendar-events", JSON.stringify(state.events));
+  function storeData(propName, data) {
+    localStorage.setItem(propName, JSON.stringify(data));
   }
 
-  function renderEvents(state, eventsEl) {
-    const { isEventsOpen, selectedDate } = state.uiState;
-    eventsEl.innerHTML = "";
+  function renderEventForm(state, containerEl) {
+    containerEl.innerHTML = "";
 
-    if (!isEventsOpen) {
-      return;
-    }
+    const elementsConfig = [
+      {
+        tagName: "form",
+        options: { className: "add-form" },
+      },
+      {
+        tagName: "input",
+        options: {
+          type: "text",
+          name: "title",
+          placeholder: "Event title",
+          className: "input-text input-text--white",
+          required: true,
+        },
+      },
+      {
+        tagName: "textarea",
+        options: {
+          name: "description",
+          placeholder: "Event description",
+          className: "textarea textarea--white",
+          required: true,
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          textContent: "Add new event",
+          className: "btn btn--white btn--large",
+        },
+      },
+    ];
 
-    // form creation and handling
-    const eventFormEl = createElement("form", { className: "event-form" });
-    const eventFormInputEl = createElement("input", {
-      type: "text",
-      name: "title",
-      placeholder: "Event title",
-      className: "event-new-title",
-      required: true,
-    });
-
-    const eventFormTextEl = createElement("textarea", {
-      name: "description",
-      placeholder: "Event description",
-      className: "event-new-description",
-      required: true,
-    });
-
-    const newEventBtn = createElement("button", { textContent: "Add new event" });
+    const [eventFormEl, eventFormInputEl, eventFormTextEl, newEventBtn] =
+      elementsConfig.map(({ tagName, options }) => createElement(tagName, options));
 
     eventFormEl.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -125,7 +138,7 @@ function app(containerId) {
       const title = formData.get("title");
       const description = formData.get("description");
 
-      watchedState.events = [
+      state.events = [
         ...watchedState.events,
         {
           id: uid(),
@@ -134,55 +147,122 @@ function app(containerId) {
           createdAt: watchedState.uiState.selectedDate,
         },
       ];
+
+      e.target.reset();
     });
 
+    eventFormEl.append(eventFormInputEl, eventFormTextEl, newEventBtn);
+    containerEl.append(eventFormEl);
+  }
+
+  function renderEvents(state, containerEl) {
+    const { isEventsOpen, selectedDate } = state.uiState;
+    containerEl.innerHTML = "";
+
+    if (!isEventsOpen) {
+      return;
+    }
+
     // events list creation and handling
-    const eventList = createElement("ul", { className: "calendar-event-list" });
+    const eventListEl = createElement("ul", { className: "calendar__event-list" });
     const events = state.events
       .filter((event) => event.createdAt.toDateString() === selectedDate.toDateString())
       .map((event) => {
-        const eventItem = createElement("li", {
-          className: "calendar-event-item",
-          innerHTML: `<h3>${event.title}</h3><p>${event.description}</p>`,
-        });
+        const elementsConfig = [
+          {
+            tagName: "li",
+            options: { className: "calendar__list-item" },
+          },
+          {
+            tagName: "article",
+            options: {
+              className: "event-card calendar__event-card",
+            },
+          },
+          {
+            tagName: "h3",
+            options: {
+              className: "event-card__title",
+              textContent: event.title,
+            },
+          },
+          {
+            tagName: "p",
+            options: {
+              className: "event-card__desc",
+              textContent: event.description,
+            },
+          },
+          {
+            tagName: "button",
+            options: {
+              className: "btn btn--grey btn--small",
+              textContent: "Delete event",
+            },
+          },
+        ];
 
-        const eventDelete = createElement("button", {
-          className: "calendar-event-delete",
-          textContent: "Delete event",
-        });
+        const [
+          eventListItemEl,
+          eventCardEl,
+          eventCardTitleEl,
+          eventCardDescEl,
+          eventDeleteBtn,
+        ] = elementsConfig.map(({ tagName, options }) => createElement(tagName, options));
 
-        eventDelete.addEventListener("click", () => {
+        eventDeleteBtn.addEventListener("click", () => {
           state.events = state.events.filter((e) => e.id !== event.id);
         });
 
-        eventItem.append(eventDelete);
+        eventCardEl.append(eventCardTitleEl, eventCardDescEl, eventDeleteBtn);
+        eventListItemEl.append(eventCardEl);
 
-        return eventItem;
+        return eventListItemEl;
       });
 
     if (events.length === 0) {
       const blankEventItem = createElement("li", {
-        className: "calendar-event-item",
+        className: "calendar__blank-event",
         innerHTML: `<p>No events have been created for this date yet</p>`,
       });
-      eventList.append(blankEventItem);
+      eventListEl.append(blankEventItem);
     }
 
-    eventFormEl.append(eventFormInputEl, eventFormTextEl, newEventBtn);
-    eventList.append(...events);
-    eventsEl.append(eventFormEl, eventList);
+    eventListEl.append(...events);
+    containerEl.append(eventListEl);
   }
 
   /**
    * This function creates, configure
    * and returns main layout containers of app
    */
-  function renderCalendarHead(state, calendarHeadEl) {
-    calendarHeadEl.innerHTML = "";
+  function renderCalendarHead(state, containerEL) {
+    containerEL.innerHTML = "";
 
-    const calendarTitleEl = createElement("div", { className: "calendar-title" });
-    const nextMonthBtn = createElement("button", { textContent: "Next Month" });
-    const prevMonthBtn = createElement("button", { textContent: "Prev Month" });
+    const elementsConfig = [
+      {
+        tagName: "div",
+        options: { className: "calendar-title" },
+      },
+      {
+        tagName: "button",
+        options: {
+          textContent: "Next Month",
+          className: "btn btn--small btn--yellow",
+        },
+      },
+      {
+        tagName: "button",
+        options: {
+          textContent: "Prev Month",
+          className: "btn btn--small btn--yellow",
+        },
+      },
+    ];
+
+    const [calendarTitleEl, nextMonthBtn, prevMonthBtn] = elementsConfig.map(
+      ({ tagName, options }) => createElement(tagName, options)
+    );
 
     nextMonthBtn.addEventListener("click", () => {
       const { selectedDate } = state.uiState;
@@ -213,7 +293,7 @@ function app(containerId) {
       ${selectedDate.getFullYear()}
     `;
 
-    calendarHeadEl.append(prevMonthBtn, calendarTitleEl, nextMonthBtn);
+    containerEL.append(prevMonthBtn, calendarTitleEl, nextMonthBtn);
   }
 
   /** This function creates array of month dates (from 1st to last) */
@@ -226,8 +306,8 @@ function app(containerId) {
   }
 
   /** this function creates and configure calendar grid */
-  function renderCalendarGrid(state, container) {
-    container.innerHTML = "";
+  function renderCalendarGrid(state, containerEl) {
+    containerEl.innerHTML = "";
     const { currentDate, selectedDate } = state.uiState;
     const selectedYear = selectedDate.getFullYear();
     const selectedMonth = selectedDate.getMonth();
@@ -264,7 +344,15 @@ function app(containerId) {
 
     // Fill the fragment with the markup for calendar date cells
     totalMonthDates.forEach((dateCell, index) => {
-      const calendarCellElem = createElement("div", { className: "calendar-cell" });
+      const calendarCellElem = createElement("div", { className: "calendar__cell" });
+      const isToday = dateCell.getTime() === currentDate.getTime();
+
+      const isSelected =
+        dateCell.getTime() === selectedDate.getTime() && state.uiState.isEventsOpen;
+
+      const eventsCount = state.events.reduce((acc, cur) => {
+        return cur.createdAt.toDateString() === dateCell.toDateString() ? acc + 1 : acc;
+      }, 0);
 
       /**
        * Check if the date belongs to the selected month
@@ -274,7 +362,7 @@ function app(containerId) {
         index < prevMonthExcerpt.length ||
         index >= currentMonthDates.length + prevMonthExcerpt.length
       ) {
-        calendarCellElem.classList.add("calendar-cell--out-of-range");
+        calendarCellElem.classList.add("calendar__cell--out-of-range");
       } else {
         calendarCellElem.addEventListener("click", () => {
           watchedState.uiState.selectedDate = dateCell;
@@ -282,27 +370,28 @@ function app(containerId) {
         });
       }
 
-      // Check if the date is today's date
-      if (dateCell.getTime() === currentDate.getTime()) {
-        calendarCellElem.classList.add("calendar-cell--today");
+      if (isToday) {
+        calendarCellElem.classList.add("calendar__cell--today");
       }
 
-      // Check if the date is currently selected
-      if (dateCell.getTime() === selectedDate.getTime() && state.uiState.isEventsOpen) {
-        calendarCellElem.classList.add("calendar-cell--selected");
+      if (isSelected) {
+        calendarCellElem.classList.add("calendar__cell--selected");
       }
 
-      // Calculate the number of events for this date
-      const eventsCount = state.events.reduce((acc, cur) => {
-        return cur.createdAt.toDateString() === dateCell.toDateString() ? acc + 1 : acc;
-      }, 0);
+      if (eventsCount > 0) {
+        calendarCellElem.classList.add("calendar__cell--has-events");
+      }
 
-      calendarCellElem.innerHTML = `<b>${dateCell.getDate()}</b><div><i>Events: ${eventsCount}</i></div>`;
+      calendarCellElem.innerHTML = `
+        <p class="calendar__date">${dateCell.getDate()}</p>
+        ${isToday ? '<p class="calendar__today-mark">Today</p>' : ""}
+        <p class="calendar__events-count">Events: ${eventsCount}</p>
+      `;
 
       fragment.append(calendarCellElem);
     });
 
-    container.append(fragment);
+    containerEl.append(fragment);
   }
 
   /** this function creates, configure and returns main layout containers */
@@ -310,25 +399,33 @@ function app(containerId) {
     const container = document.getElementById(containerId);
     container.classList.add("calendar");
 
-    const head = createElement("div", { className: "calendar-head" });
-    const grid = createElement("div", { className: "calendar-grid" });
-    const events = createElement("div", { className: "calendar-events" });
-    const legend = createElement("div", { className: "calendar-legend" });
+    const elementsConfig = [
+      { tagName: "div", options: { className: "calendar__head" } },
+      { tagName: "div", options: { className: "calendar__grid" } },
+      { tagName: "div", options: { className: "calendar__events" } },
+      { tagName: "div", options: { className: "calendar__form" } },
+      { tagName: "div", options: { className: "calendar__legend" } },
+    ];
+
+    const [head, grid, events, form, legend] = elementsConfig.map(
+      ({ tagName, options }) => createElement(tagName, options)
+    );
 
     WEEK_DAY_MAP.forEach((dayName) => {
       const legendItem = createElement("div", {
-        className: "calendar-legend-item",
+        className: "calendar__legend-item",
         textContent: dayName,
       });
       legend.append(legendItem);
     });
 
-    container.append(head, legend, grid, events);
+    container.append(head, legend, grid, form, events);
 
     return {
       head,
       grid,
       events,
+      form,
     };
   }
 
