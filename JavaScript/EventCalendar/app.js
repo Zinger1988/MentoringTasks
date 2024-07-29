@@ -93,7 +93,12 @@ function app(containerId) {
   }
 
   function renderEventForm(state, containerEl) {
+    const { isEventsOpen } = state.uiState;
     containerEl.innerHTML = "";
+
+    if (!isEventsOpen) {
+      return;
+    }
 
     const elementsConfig = [
       {
