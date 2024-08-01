@@ -178,6 +178,12 @@
   grid-template-rows: min-content 1fr;
 }
 
+.contact-card--blank {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: bold;
+}
+
 .contact-card__title {
   font-size: 18px;
   font-weight: bold;
@@ -244,3 +250,43 @@
 }
 
 /*#endregion edit-form ----------------------------------------*/
+
+/*#region confirm modal --------------------------------------*/
+
+.confirm-modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.confirm-modal__body {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  width: 400px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.confirm-modal__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: bold;
+}
+
+.confirm-modal__controls {
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  display: flex;
+  gap: 20px;
+}
+
+/*#region confirm modal --------------------------------------*/

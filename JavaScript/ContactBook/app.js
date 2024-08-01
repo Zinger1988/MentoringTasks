@@ -20,66 +20,54 @@ import { uid } from "https://cdn.jsdelivr.net/npm/uid@2.0.2/+esm";
  */
 
 function app(containerId) {
-  const initialState = {
-    contacts: [],
-    uiState: {
-      editId: null,
-      searchQuery: "",
-    },
+  // Just simple utility function
+  const createElement = ({ tagName, properties = {}, attributes = {} }) => {
+    const element = document.createElement(tagName);
+
+    for (let prop in properties) {
+      element[prop] = properties[prop];
+    }
+
+    for (let attr in attributes) {
+      element.setAttribute(attr, attributes[attr]);
+    }
+
+    return element;
   };
 
-  const containers = initLayout(containerId);
-  const watchedState = onChange(initialState, render(containers));
-  const storedContacts = JSON.parse(localStorage.getItem("contacts")) || [];
-
-  // initialising tasks and fires first rerendering of the app
-  watchedState.contacts = storedContacts;
-
-  /**
-   * This function triggers every time we reassign the
-   * values of properties of the tracked object
-   */
-  function render(containers) {
-    return function (path, value, prevValue) {
-      switch (path) {
-        case "contacts": {
-          storeData("contacts", this.contacts);
-          renderHeader(this, containers.header);
-          renderFooter(this, containers.footer);
-        }
-        case "uiState.editId":
-        case "uiState.searchQuery": {
-          renderContacts(this, containers.list);
-        }
-      }
-    };
-  }
-
   /** this function creates and configure header (filters) */
-  function renderHeader(state, containerEl) {
+  const renderHeader = (state, containerEl) => {
     containerEl.innerHTML = "";
 
-    const searchInputEl = createElement("input", {
-      type: "text",
-      className: "input-text contact-book__search",
-      placeholder: "Enter contact name or phone number...",
-      value: state.uiState.searchQuery,
+    const searchInputEl = createElement({
+      tagName: "input",
+      properties: {
+        type: "text",
+        className: "input-text contact-book__search",
+        placeholder: "Enter contact name or phone number...",
+        value: state.uiState.searchQuery,
+      },
     });
+
+    let debounceTimerId = null;
 
     searchInputEl.addEventListener("input", (e) => {
       state.uiState.editId = null;
-      state.uiState.searchQuery = e.target.value.trim();
+
+      if (debounceTimerId) {
+        clearTimeout(debounceTimerId);
+      }
+
+      debounceTimerId = setTimeout(() => {
+        state.uiState.searchQuery = e.target.value.trim();
+      }, 500);
     });
 
     containerEl.append(searchInputEl);
-
-    if (state.uiState.searchQuery) {
-      searchInputEl.focus();
-    }
-  }
+  };
 
   /** this function filters contacts by name or phone */
-  function handleSearch(state) {
+  const handleSearch = (state) => {
     const { contacts, uiState } = state;
     const { searchQuery } = uiState;
 
@@ -90,17 +78,19 @@ function app(containerId) {
     }
 
     return contacts;
-  }
+  };
 
   /**
    * this function creates and configure contacts list
    * also it shows contact card or contact edit form,
    * depending on editId state propery
    */
-  function renderContacts(state, containerEl) {
+  const renderContacts = (state, containerEl) => {
     containerEl.innerHTML = "";
-    const FoundedContacts = handleSearch(state);
-    const contactCards = FoundedContacts.map((contact) => {
+
+    const contacts = state.uiState.searchQuery ? handleSearch(state) : state.contacts;
+
+    const contactCards = contacts.map((contact) => {
       const isEditing = contact.id === state.uiState.editId;
 
       return isEditing
@@ -110,22 +100,26 @@ function app(containerId) {
 
     if (contactCards.length === 0) {
       contactCards.push(
-        createElement("div", {
-          className: "contact-card contact-book__card",
-          textContent: `No contacts were found...`,
+        createElement({
+          tagName: "div",
+          properties: {
+            className: "contact-card contact-card--blank contact-book__card",
+            textContent: `No contacts were found... 🙄`,
+          },
         })
       );
     }
 
     containerEl.append(...contactCards);
-  }
+  };
 
   /** this function creates and configure edit form */
-  function renderContactEditForm(state, contact) {
+  const renderContactEditForm = (state, contact) => {
+    // prettier-ignore
     const elementsConfig = [
       {
         tagName: "form",
-        options: {
+        properties: {
           className: "contact-book__edit-form edit-form",
           innerHTML: `
             <div class="edit-form__inner">
@@ -151,24 +145,18 @@ function app(containerId) {
       },
       {
         tagName: "button",
-        options: {
-          className: "btn btn--small btn--yellow edit-form__btn",
-          textContent: "Save",
-          type: "submit",
-        },
+        properties: { className: "btn btn--small btn--yellow edit-form__btn", textContent: "Save", type: "submit" },
+        attributes: { "aria-label": "Save" },
       },
       {
         tagName: "button",
-        options: {
-          className: "btn btn--small btn--grey edit-form__btn",
-          textContent: "Cancel",
-          type: "reset",
-        },
+        properties: { className: "btn btn--small btn--grey edit-form__btn", textContent: "Cancel", type: "reset" },
+        attributes: { "aria-label": "Cancel" },
       },
     ];
 
-    const [formEl, submitBtn, cancelBtn] = elementsConfig.map(({ tagName, options }) =>
-      createElement(tagName, options)
+    const [formEl, submitBtn, cancelBtn] = elementsConfig.map((config) =>
+      createElement(config)
     );
 
     formEl.append(submitBtn, cancelBtn);
@@ -182,24 +170,34 @@ function app(containerId) {
       e.preventDefault();
 
       const formData = new FormData(e.target);
-      const contactData = Object.fromEntries(formData);
+      const name = formData.get("name");
+      const phone = formData.get("phone");
 
-      state.contacts = state.contacts.map((c) => {
-        return c.id === contact.id ? { ...c, ...contactData } : c;
-      });
+      const isValid = [name, phone].every((field) => field && field?.trim());
+
+      if (!isValid) {
+        e.target.reset();
+        throw new Error("Invalid contact form data");
+      }
+
+      state.contacts = state.contacts.reduce((acc, cur) => {
+        cur.id === contact.id ? acc.push({ ...cur, name, phone }) : acc.push(cur);
+        return acc;
+      }, []);
 
       formEl.reset();
     });
 
     return formEl;
-  }
+  };
 
   /** this function creates and configure contact card */
-  function renderContactCard(state, contact) {
+  const renderContactCard = (state, contact) => {
+    // prettier-ignore
     const elementsConfig = [
       {
         tagName: "article",
-        options: {
+        properties: {
           className: "contact-card contact-book__card",
           innerHTML: `
             <div class="contact-card__inner">
@@ -213,22 +211,18 @@ function app(containerId) {
       },
       {
         tagName: "button",
-        options: {
-          className: "btn btn--grey btn--small contact-card__btn",
-          textContent: "Delete",
-        },
+        properties: { className: "btn btn--grey btn--small contact-card__btn", textContent: "Delete" },
+        attributes: { "aria-label": "Delete" },
       },
       {
         tagName: "button",
-        options: {
-          className: "btn btn--yellow btn--small contact-card__btn",
-          textContent: `Edit`,
-        },
+        properties: { className: "btn btn--yellow btn--small contact-card__btn", textContent: `Edit` },
+        attributes: { "aria-label": "Edit" },
       },
     ];
 
-    const [cardEl, deleteBtn, editBtn] = elementsConfig.map(({ tagName, options }) =>
-      createElement(tagName, options)
+    const [cardEl, deleteBtn, editBtn] = elementsConfig.map((config) =>
+      createElement(config)
     );
 
     editBtn.addEventListener("click", () => {
@@ -236,103 +230,230 @@ function app(containerId) {
     });
 
     deleteBtn.addEventListener("click", () => {
-      state.contacts = state.contacts.filter((t) => t.id !== contact.id);
+      state.uiState.confirm = {
+        itemId: contact.id,
+        isVisible: true,
+        text: "Are you sure you want to delete this contact?",
+      };
     });
 
     cardEl.append(deleteBtn, editBtn);
 
     return cardEl;
-  }
+  };
 
   /** this function creates and configure footer (add form) */
-  function renderFooter(state, containerEl) {
+  const renderFooter = (state, containerEl) => {
     containerEl.innerHTML = "";
 
+    // prettier-ignore
     const elementsConfig = [
       {
         tagName: "form",
-        options: { className: "add-form" },
+        properties: { className: "add-form" },
       },
       {
         tagName: "input",
-        options: {
-          type: "text",
-          name: "name",
-          className: "input-text input-text--white form__input",
-          required: true,
-          placeholder: "Contact name",
-        },
+        properties: { type: "text", name: "name", className: "input-text input-text--white form__input", required: true, placeholder: "Contact name" },
       },
       {
         tagName: "input",
-        options: {
-          type: "tel",
-          name: "phone",
-          className: "input-text input-text--white form__input",
-          required: true,
-          placeholder: "Contact phone",
-        },
+        properties: { type: "tel", name: "phone", className: "input-text input-text--white form__input", required: true, placeholder: "Contact phone" },
       },
       {
         tagName: "button",
-        options: {
-          className: "btn btn--large btn--white",
-          textContent: "Add new contact",
-          type: "submit",
-        },
+        properties: { className: "btn btn--large btn--white", textContent: "Add new contact", type: "submit" },
+        attributes: { "aria-label": "Add new contact" },
       },
     ];
 
-    const [formEl, titleEl, telEl, submitBtn] = elementsConfig.map(
-      ({ tagName, options }) => createElement(tagName, options)
+    const [formEl, titleEl, telEl, submitBtn] = elementsConfig.map((config) =>
+      createElement(config)
     );
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
 
       const formData = new FormData(e.target);
-      const contactData = Object.fromEntries(formData);
+      const name = formData.get("name");
+      const phone = formData.get("phone");
 
-      state.contacts.push({ id: uid(), ...contactData });
+      const isValid = [name, phone].every((field) => field && field?.trim());
+
+      if (!isValid) {
+        e.target.reset();
+        throw new Error("Invalid contact form data");
+      }
+
+      state.contacts.push({ id: uid(), name, phone });
       state.uiState.editId = null;
+      e.target.reset();
     });
 
     formEl.append(titleEl, telEl, submitBtn);
     containerEl.append(formEl);
-  }
+  };
 
-  function storeData(propName, data) {
+  const storeData = (propName, data) => {
     localStorage.setItem(propName, JSON.stringify(data));
-  }
+  };
+
+  /** this function renders confirm modal and
+   * accepts onConfirm and onCancel callbacks
+   */
+  const renderConfirm = ({ state, containerEl, onConfirm, onCancel }) => {
+    const { isVisible, text } = state.uiState.confirm;
+    containerEl.innerHTML = "";
+
+    if (!isVisible) {
+      return;
+    }
+
+    // prettier-ignore
+    const elementsConfig = [
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal todo-list__confirm", innerHTML: `` },
+      },
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal__body" },
+      },
+      {
+        tagName: "p",
+        properties: { className: "confirm-modal__text", textContent: text, },
+      },
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal__controls" },
+      },
+      {
+        tagName: "button",
+        properties: { className: "confirm-modal__btn btn", textContent: "Confirm" },
+        attributes: { "aria-label": "Confirm", },
+      },
+      {
+        tagName: "button",
+        properties: { className: "confirm-modal__btn btn btn--grey", textContent: "Cancel" },
+        attributes: { "aria-label": "Cancel" },
+      },
+    ];
+
+    const [wrapperEl, contentEl, textEl, controlsEl, confirmBtn, cancelBtn] =
+      elementsConfig.map((config) => createElement(config));
+
+    const handleCloseConfirm = (callback) => {
+      if (callback) {
+        callback(state);
+      }
+
+      state.uiState.confirm = {
+        isVisible: false,
+        text: null,
+      };
+    };
+
+    confirmBtn.addEventListener("click", () => {
+      handleCloseConfirm(onConfirm);
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      handleCloseConfirm(onCancel);
+    });
+
+    wrapperEl.addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) {
+        handleCloseConfirm();
+      }
+    });
+
+    controlsEl.append(confirmBtn, cancelBtn);
+    contentEl.append(textEl, controlsEl);
+    wrapperEl.append(contentEl);
+    containerEl.append(wrapperEl);
+  };
 
   /** this function creates, configure and returns main layout containers */
-  function initLayout(containerId) {
+  const initLayout = (containerId) => {
     const wrapper = document.getElementById(containerId);
     wrapper.classList.add("contact-book");
 
-    const list = createElement("div", { className: "contact-book__contacts" });
-    const header = createElement("div", { className: "contact-book__header" });
-    const footer = createElement("div", { className: "contact-book__footer" });
+    const elementsConfig = [
+      { tagName: "div", properties: { className: "contact-book__contacts" } },
+      { tagName: "div", properties: { className: "contact-book__header" } },
+      { tagName: "div", properties: { className: "contact-book__footer" } },
+      { tagName: "div", properties: { className: "contact-book__modal" } },
+    ];
 
-    wrapper.append(header, list, footer);
+    const [list, header, footer, modal] = elementsConfig.map((config) =>
+      createElement(config)
+    );
 
-    return {
-      list,
-      header,
-      footer,
+    wrapper.append(header, list, footer, modal);
+
+    return { list, header, footer, modal };
+  };
+
+  /**
+   * This function triggers every time we reassign the
+   * values of properties of the tracked object
+   */
+  const render = (containers) => {
+    return function (path, value, prevValue) {
+      switch (path) {
+        case "contacts": {
+          storeData("contacts", this.contacts);
+        }
+        case "uiState.editId":
+        case "uiState.searchQuery": {
+          renderContacts(this, containers.list);
+          break;
+        }
+        case "uiState.confirm": {
+          renderConfirm({
+            state: this,
+            containerEl: containers.modal,
+            onConfirm: (state) => {
+              const { itemId } = state.uiState.confirm;
+              state.contacts = state.contacts.filter((c) => c.id !== itemId);
+            },
+          });
+          break;
+        }
+      }
     };
+  };
+
+  const initialState = {
+    contacts: [],
+    uiState: {
+      editId: null,
+      searchQuery: "",
+      confirm: {
+        itemId: null,
+        isVisible: false,
+        text: null,
+      },
+    },
+  };
+
+  let storedContacts = [];
+
+  try {
+    storedContacts = JSON.parse(localStorage.getItem("contacts")) || [];
+  } catch (e) {
+    console.error(
+      `An error occurred during the parsing of contacts data from Local Storage. ${e.message}`
+    );
   }
 
-  // Just simple utility function
-  function createElement(tagName, props) {
-    const element = document.createElement(tagName);
+  const containers = initLayout(containerId);
 
-    for (let prop in props) {
-      element[prop] = props[prop];
-    }
-
-    return element;
-  }
+  // initialising contacts and fires first rerendering of the app
+  const watchedState = onChange(initialState, render(containers));
+  watchedState.contacts = storedContacts;
+  renderHeader(watchedState, containers.header);
+  renderFooter(watchedState, containers.footer);
 }
 
 app("contact-book");

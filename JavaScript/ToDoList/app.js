@@ -16,44 +16,24 @@ import { uid } from "https://cdn.jsdelivr.net/npm/uid@2.0.2/+esm";
  * Зберігайте стан завдань в LocalStorage, щоб вони зберігались між перезавантаженнями сторінки.
  */
 
-function app(containerId) {
-  const FILTERS_MAP = ["all", "completed", "incompleted"];
+const app = (containerId) => {
+  // Just simple utility function
+  const createElement = ({ tagName, properties = {}, attributes = {} }) => {
+    const element = document.createElement(tagName);
 
-  const initialState = {
-    tasks: [],
-    uiState: {
-      filterBy: FILTERS_MAP[0],
-    },
+    for (let prop in properties) {
+      element[prop] = properties[prop];
+    }
+
+    for (let attr in attributes) {
+      element.setAttribute(attr, attributes[attr]);
+    }
+
+    return element;
   };
 
-  const containers = initLayout(containerId);
-  const watchedState = onChange(initialState, render(containers));
-  const storedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-
-  // initialising tasks and fires first rerendering of the app
-  watchedState.tasks = storedTasks;
-
-  /**
-   * This function triggers every time we reassign the
-   * values of properties of the tracked object
-   */
-  function render(containers) {
-    return function (path, value, prevValue) {
-      switch (path) {
-        case "tasks": {
-          storeData("tasks", this.tasks);
-        }
-        case "uiState.filterBy": {
-          renderHeader(this, containers.header);
-          renderTasks(this, containers.list);
-          renderFooter(this, containers.footer);
-        }
-      }
-    };
-  }
-
   /** this function creates and configure header (filters) */
-  function renderHeader(state, containerEl) {
+  const renderHeader = (state, containerEl) => {
     containerEl.innerHTML = "";
 
     const { filterBy } = state.uiState;
@@ -61,9 +41,11 @@ function app(containerId) {
     const filterButtons = FILTERS_MAP.map((filter) => {
       const isActive = filterBy === filter;
 
-      const filterBtn = createElement("button", {
-        className: `btn ${isActive ? "btn--yellow" : ""}`,
-        textContent: filter,
+      // prettier-ignore
+      const filterBtn = createElement({
+        tagName: "button",
+        properties: { className: `btn ${isActive ? "btn--yellow" : ""}`, textContent: filter },
+        attributes: { "aria-label": filter }
       });
 
       filterBtn.dataset.filter = filter;
@@ -78,10 +60,10 @@ function app(containerId) {
         state.uiState.filterBy = e.target.dataset.filter;
       }
     });
-  }
+  };
 
   /** this function filters tasks by "completed" property */
-  function handleFilterTasks(state) {
+  const handleFilterTasks = (state) => {
     const { tasks, uiState } = state;
     const { filterBy } = uiState;
 
@@ -96,19 +78,20 @@ function app(containerId) {
         return tasks;
       }
     }
-  }
+  };
 
   /** this function creates and configure tasks list */
-  function renderTasks(state, containerEl) {
+  const renderTasks = (state, containerEl) => {
     containerEl.innerHTML = "";
 
     const filteredTasks = handleFilterTasks(state);
 
     const tasksCards = filteredTasks.map((task) => {
+      // prettier-ignore
       const elementsConfig = [
         {
-          tagName: "article",
-          options: {
+          tagName: "div",
+          properties: {
             className: "task-card todo-list__task-card",
             innerHTML: `
               <div class="task-card__inner">
@@ -123,26 +106,26 @@ function app(containerId) {
         },
         {
           tagName: "button",
-          options: {
-            className: "btn btn--grey btn--small task-card__btn",
-            textContent: "Delete",
-          },
+          properties: { className: "btn btn--grey btn--small task-card__btn", textContent: "Delete"},
+          attributes: { "aria-label": "Delete" },
         },
         {
           tagName: "button",
-          options: {
-            className: "btn btn--yellow btn--small task-card__btn",
-            textContent: `mark as ${task.completed ? "incomplete" : "complete"}`,
-          },
+          properties: { className: "btn btn--yellow btn--small task-card__btn", textContent: `Mark as ${task.completed ? "incomplete" : "complete"}`},
+          attributes: { "aria-label": `Mark as ${task.completed ? "incomplete" : "complete"}`},
         },
       ];
 
-      const [cardEl, deleteBtn, toggleCompleteBtn] = elementsConfig.map(
-        ({ tagName, options }) => createElement(tagName, options)
+      const [cardEl, deleteBtn, toggleCompleteBtn] = elementsConfig.map((config) =>
+        createElement(config)
       );
 
       deleteBtn.addEventListener("click", () => {
-        state.tasks = state.tasks.filter((t) => t.id !== task.id);
+        state.uiState.confirm = {
+          itemId: task.id,
+          isVisible: true,
+          text: "Are you sure you want to delete this task?",
+        };
       });
 
       toggleCompleteBtn.addEventListener("click", () => {
@@ -158,103 +141,236 @@ function app(containerId) {
 
     if (tasksCards.length === 0) {
       tasksCards.push(
-        createElement("div", {
-          className: "task-card todo-list__task-card",
-          textContent: `No tasks here at this moment...`,
+        createElement({
+          tagName: "div",
+          options: {
+            className: "task-card task-card--blank todo-list__task-card",
+            textContent:
+              "It's empty here for now... 😭 Please enter the title and description of the task in the form below.",
+          },
         })
       );
     }
 
     containerEl.append(...tasksCards);
-  }
+  };
 
   /** this function creates and configure footer (add form) */
-  function renderFooter(state, containerEl) {
+  const renderFooter = (state, containerEl) => {
     containerEl.innerHTML = "";
 
+    // prettier-ignore
     const elementsConfig = [
       {
         tagName: "form",
-        options: { className: "add-form" },
+        properties: { className: "add-form" },
       },
       {
         tagName: "input",
-        options: {
-          type: "text",
-          name: "title",
-          className: "input-text input-text--white",
-          required: true,
-          placeholder: "Task title",
-        },
+        properties: { type: "text", name: "title", className: "input-text input-text--white", placeholder: "Task title" },
       },
       {
         tagName: "textarea",
-        options: {
-          name: "description",
-          className: "textarea textarea--white",
-          required: true,
-          placeholder: "Task description",
-        },
+        properties: { name: "description", className: "textarea textarea--white", required: true, placeholder: "Task description" },
       },
       {
         tagName: "button",
-        options: {
-          className: "btn btn--large btn--white",
-          textContent: "Add new task",
-          type: "submit",
-        },
+        properties: { className: "btn btn--large btn--white", textContent: "Add new task", type: "submit" },
+        attributes: { "aria-label": "Add new task" }
       },
     ];
 
-    const [formEl, titleEl, descriptionEl, submitBtn] = elementsConfig.map(
-      ({ tagName, options }) => createElement(tagName, options)
+    const [formEl, titleEl, descriptionEl, submitBtn] = elementsConfig.map((config) =>
+      createElement(config)
     );
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
 
       const formData = new FormData(e.target);
-      const taskData = Object.fromEntries(formData);
+      const title = formData.get("title");
+      const description = formData.get("description");
 
-      state.tasks.push({ id: uid(), ...taskData });
+      const isValid = [title, description].every((field) => field && field?.trim());
+
+      if (!isValid) {
+        e.target.reset();
+        throw new Error("Invalid task form data");
+      }
+
+      state.tasks.push({ id: uid(), title, description });
     });
 
     formEl.append(titleEl, descriptionEl, submitBtn);
     containerEl.append(formEl);
-  }
+  };
 
-  function storeData(propName, data) {
+  /** this function renders confirm modal and
+   * accepts onConfirm and onCancel callbacks
+   */
+  const renderConfirm = ({ state, containerEl, onConfirm, onCancel }) => {
+    const { isVisible, text } = state.uiState.confirm;
+    containerEl.innerHTML = "";
+
+    if (!isVisible) {
+      return;
+    }
+
+    // prettier-ignore
+    const elementsConfig = [
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal todo-list__confirm", innerHTML: `` },
+      },
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal__body" },
+      },
+      {
+        tagName: "p",
+        properties: { className: "confirm-modal__text", textContent: text, },
+      },
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal__controls" },
+      },
+      {
+        tagName: "button",
+        properties: { className: "confirm-modal__btn btn", textContent: "Confirm" },
+        attributes: { "aria-label": "Confirm", },
+      },
+      {
+        tagName: "button",
+        properties: { className: "confirm-modal__btn btn btn--grey", textContent: "Cancel" },
+        attributes: { "aria-label": "Cancel" },
+      },
+    ];
+
+    const [wrapperEl, contentEl, textEl, controlsEl, confirmBtn, cancelBtn] =
+      elementsConfig.map((config) => createElement(config));
+
+    const handleCloseConfirm = (callback) => {
+      if (callback) {
+        callback(state);
+      }
+
+      state.uiState.confirm = {
+        isVisible: false,
+        text: null,
+      };
+    };
+
+    confirmBtn.addEventListener("click", () => {
+      handleCloseConfirm(onConfirm);
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      handleCloseConfirm(onCancel);
+    });
+
+    wrapperEl.addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) {
+        handleCloseConfirm();
+      }
+    });
+
+    controlsEl.append(confirmBtn, cancelBtn);
+    contentEl.append(textEl, controlsEl);
+    wrapperEl.append(contentEl);
+    containerEl.append(wrapperEl);
+  };
+
+  const storeData = (propName, data) => {
     localStorage.setItem(propName, JSON.stringify(data));
-  }
+  };
 
   /** this function creates, configure and returns main layout containers */
-  function initLayout(containerId) {
+  const initLayout = (containerId) => {
     const wrapper = document.getElementById(containerId);
     wrapper.classList.add("todo-list");
 
-    const list = createElement("div", { className: "todo-list__tasks" });
-    const header = createElement("div", { className: "todo-list__header" });
-    const footer = createElement("div", { className: "todo-list__footer" });
+    // prettier-ignore
+    const elementsConfig = [
+      { tagName: "div", properties: { className: "todo-list__header" } },
+      { tagName: "div", properties: { className: "todo-list__tasks" } },
+      { tagName: "div", properties: { className: "todo-list__footer" } },
+      { tagName: "div", properties: { className: "todo-list__modal" } }
+    ];
 
-    wrapper.append(header, list, footer);
+    const [header, list, footer, modal] = elementsConfig.map((config) =>
+      createElement(config)
+    );
+
+    wrapper.append(header, list, footer, modal);
 
     return {
+      modal,
       list,
       header,
       footer,
     };
+  };
+
+  /**
+   * This function triggers every time we reassign the
+   * values of properties of the tracked object
+   */
+  const render = (containers) => {
+    return function (path, value, prevValue) {
+      switch (path) {
+        case "tasks": {
+          storeData("tasks", this.tasks);
+        }
+        case "uiState.filterBy": {
+          renderHeader(this, containers.header);
+          renderTasks(this, containers.list);
+          renderFooter(this, containers.footer);
+          break;
+        }
+        case "uiState.confirm": {
+          renderConfirm({
+            state: this,
+            containerEl: containers.modal,
+            onConfirm: (state) => {
+              const { itemId } = state.uiState.confirm;
+              state.tasks = state.tasks.filter((t) => t.id !== itemId);
+            },
+          });
+          break;
+        }
+      }
+    };
+  };
+
+  const FILTERS_MAP = ["all", "completed", "incompleted"];
+
+  const initialState = {
+    tasks: [],
+    uiState: {
+      filterBy: FILTERS_MAP[0],
+      confirm: {
+        itemId: null,
+        isVisible: false,
+        text: null,
+      },
+    },
+  };
+
+  let storedTasks = [];
+
+  try {
+    storedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  } catch (e) {
+    console.error(
+      `An error occurred during the parsing of todo-list data from Local Storage. ${e.message}`
+    );
   }
 
-  // Just simple utility function
-  function createElement(tagName, props = {}) {
-    const element = document.createElement(tagName);
+  const containers = initLayout(containerId);
 
-    for (let prop in props) {
-      element[prop] = props[prop];
-    }
-
-    return element;
-  }
-}
+  // initialising tasks and fires first rerendering of the app
+  const watchedState = onChange(initialState, render(containers));
+  watchedState.tasks = storedTasks;
+};
 
 app("todo-list");

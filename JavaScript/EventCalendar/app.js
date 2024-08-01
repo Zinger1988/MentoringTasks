@@ -21,78 +21,22 @@ import { uid } from "https://cdn.jsdelivr.net/npm/uid@2.0.2/+esm";
  */
 
 function app(containerId) {
-  const MONTH_MAP = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  // Just simple utility function
+  const createElement = ({ tagName, properties = {}, attributes = {} }) => {
+    const element = document.createElement(tagName);
 
-  const WEEK_DAY_MAP = ["Mon", "Tur", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    for (let prop in properties) {
+      element[prop] = properties[prop];
+    }
 
-  const initialState = {
-    events: [],
-    uiState: {
-      isEventsOpen: false,
-      currentDate: null,
-      selectedDate: null,
-    },
+    for (let attr in attributes) {
+      element.setAttribute(attr, attributes[attr]);
+    }
+
+    return element;
   };
 
-  const containers = initLayout(containerId);
-  const watchedState = onChange(initialState, render(containers));
-  const currentDate = new Date(new Date().setHours(0, 0, 0, 0));
-  const storedEvents = JSON.parse(localStorage.getItem("events")) || [];
-
-  /**
-   * initialising calendar values and fires first
-   * rerendering of the app
-   */
-  watchedState.uiState.currentDate = currentDate;
-  watchedState.uiState.selectedDate = new Date(currentDate);
-  watchedState.events = storedEvents.map((event) => ({
-    ...event,
-    createdAt: new Date(event.createdAt),
-  }));
-
-  /**
-   * This function triggers every time we reassign the
-   * values of properties of the tracked object
-   */
-  function render(containers) {
-    return function (path, value, prevValue) {
-      switch (path) {
-        case "events":
-          storeData("events", this.events);
-        case "uiState.selectedDate": {
-          renderCalendarHead(this, containers.head);
-          renderCalendarGrid(this, containers.grid);
-          renderEvents(this, containers.events);
-          break;
-        }
-        case "uiState.isEventsOpen": {
-          renderCalendarGrid(this, containers.grid);
-          renderEventForm(this, containers.form);
-          renderEvents(this, containers.events);
-          break;
-        }
-      }
-    };
-  }
-
-  function storeData(propName, data) {
-    localStorage.setItem(propName, JSON.stringify(data));
-  }
-
-  function renderEventForm(state, containerEl) {
+  const renderEventForm = (state, containerEl) => {
     const { isEventsOpen } = state.uiState;
     containerEl.innerHTML = "";
 
@@ -100,41 +44,29 @@ function app(containerId) {
       return;
     }
 
+    // prettier-ignore
     const elementsConfig = [
       {
         tagName: "form",
-        options: { className: "add-form" },
+        properties: { className: "add-form" },
       },
       {
         tagName: "input",
-        options: {
-          type: "text",
-          name: "title",
-          placeholder: "Event title",
-          className: "input-text input-text--white",
-          required: true,
-        },
+        properties: { type: "text", name: "title", placeholder: "Event title", className: "input-text input-text--white", required: true },
       },
       {
         tagName: "textarea",
-        options: {
-          name: "description",
-          placeholder: "Event description",
-          className: "textarea textarea--white",
-          required: true,
-        },
+        properties: { name: "description", placeholder: "Event description", className: "textarea textarea--white", required: true },
       },
       {
         tagName: "button",
-        options: {
-          textContent: "Add new event",
-          className: "btn btn--white btn--large",
-        },
+        properties: { textContent: "Add new event", className: "btn btn--white btn--large" },
+        attributes: { "aria-label": "Add new event" },
       },
     ];
 
     const [eventFormEl, eventFormInputEl, eventFormTextEl, newEventBtn] =
-      elementsConfig.map(({ tagName, options }) => createElement(tagName, options));
+      elementsConfig.map((config) => createElement(config));
 
     eventFormEl.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -143,24 +75,28 @@ function app(containerId) {
       const title = formData.get("title");
       const description = formData.get("description");
 
-      state.events = [
-        ...watchedState.events,
-        {
-          id: uid(),
-          title,
-          description,
-          createdAt: watchedState.uiState.selectedDate,
-        },
-      ];
+      const isValid = [title, description].every((field) => field && field?.trim());
+
+      if (!isValid) {
+        e.target.reset();
+        throw new Error("Invalid event form data");
+      }
+
+      state.events.push({
+        id: uid(),
+        title,
+        description,
+        createdAt: String(state.uiState.selectedDate),
+      });
 
       e.target.reset();
     });
 
     eventFormEl.append(eventFormInputEl, eventFormTextEl, newEventBtn);
     containerEl.append(eventFormEl);
-  }
+  };
 
-  function renderEvents(state, containerEl) {
+  const renderEvents = (state, containerEl) => {
     const { isEventsOpen, selectedDate } = state.uiState;
     containerEl.innerHTML = "";
 
@@ -169,104 +105,109 @@ function app(containerId) {
     }
 
     // events list creation and handling
-    const eventListEl = createElement("ul", { className: "calendar__event-list" });
-    const events = state.events
-      .filter((event) => event.createdAt.toDateString() === selectedDate.toDateString())
-      .map((event) => {
-        const elementsConfig = [
-          {
-            tagName: "li",
-            options: { className: "calendar__list-item" },
-          },
-          {
-            tagName: "article",
-            options: {
-              className: "event-card calendar__event-card",
-            },
-          },
-          {
-            tagName: "h3",
-            options: {
-              className: "event-card__title",
-              textContent: event.title,
-            },
-          },
-          {
-            tagName: "p",
-            options: {
-              className: "event-card__desc",
-              textContent: event.description,
-            },
-          },
-          {
-            tagName: "button",
-            options: {
-              className: "btn btn--grey btn--small",
-              textContent: "Delete event",
-            },
-          },
-        ];
+    const eventListEl = createElement({
+      tagName: "ul",
+      properties: { className: "calendar__event-list" },
+    });
 
-        const [
-          eventListItemEl,
-          eventCardEl,
-          eventCardTitleEl,
-          eventCardDescEl,
-          eventDeleteBtn,
-        ] = elementsConfig.map(({ tagName, options }) => createElement(tagName, options));
-
-        eventDeleteBtn.addEventListener("click", () => {
-          state.events = state.events.filter((e) => e.id !== event.id);
+    const events = state.events.reduce((acc, cur) => {
+      if (new Date(cur.createdAt).toDateString() === selectedDate.toDateString()) {
+        const listItemEl = createElement({
+          tagName: "li",
+          properties: { className: "calendar__list-item" },
         });
+        const eventCardEl = createEventCard(state, cur);
 
-        eventCardEl.append(eventCardTitleEl, eventCardDescEl, eventDeleteBtn);
-        eventListItemEl.append(eventCardEl);
+        listItemEl.append(eventCardEl);
 
-        return eventListItemEl;
-      });
+        return [...acc, listItemEl];
+      }
+
+      return acc;
+    }, []);
 
     if (events.length === 0) {
-      const blankEventItem = createElement("li", {
-        className: "calendar__blank-event",
-        innerHTML: `<p>No events have been created for this date yet</p>`,
+      // prettier-ignore
+      const blankEventItem = createElement({
+        tagName: "li",
+        properties: { className: "calendar__blank-event", innerHTML: `<p>No events have been created for this date yet</p>`},
       });
       eventListEl.append(blankEventItem);
     }
 
     eventListEl.append(...events);
     containerEl.append(eventListEl);
+  };
+
+  /**
+   * This function creates, configure
+   * and returns signle event card but NOT appends it into the DOM
+   */
+  function createEventCard(state, event) {
+    // prettier-ignore
+    const elementsConfig = [
+      {
+        tagName: "article",
+        properties: { className: "event-card calendar__event-card" },
+      },
+      {
+        tagName: "h3",
+        properties: { className: "event-card__title", textContent: event.title },
+      },
+      {
+        tagName: "p",
+        properties: { className: "event-card__desc", textContent: event.description },
+      },
+      {
+        tagName: "button",
+        properties: { className: "btn btn--grey btn--small", textContent: "Delete event" },
+        attributes: { "aria-label": "Delete event" },
+      },
+    ];
+
+    const [eventCardEl, eventCardTitleEl, eventCardDescEl, eventDeleteBtn] =
+      elementsConfig.map((config) => createElement(config));
+
+    eventDeleteBtn.addEventListener("click", () => {
+      state.uiState.confirm = {
+        itemId: event.id,
+        isVisible: true,
+        text: "Are you sure you want to delete this event?",
+      };
+    });
+
+    eventCardEl.append(eventCardTitleEl, eventCardDescEl, eventDeleteBtn);
+
+    return eventCardEl;
   }
 
   /**
    * This function creates, configure
    * and returns main layout containers of app
    */
-  function renderCalendarHead(state, containerEL) {
+  const renderCalendarHead = (state, containerEL) => {
     containerEL.innerHTML = "";
 
+    // prettier-ignore
     const elementsConfig = [
       {
         tagName: "div",
-        options: { className: "calendar-title" },
+        properties: { className: "calendar-title" },
       },
       {
         tagName: "button",
-        options: {
-          textContent: "Next Month",
-          className: "btn btn--small btn--yellow",
-        },
+        properties: { textContent: "Next Month", className: "btn btn--small btn--yellow" },
+        attributes: { "aria-label": "Next Month" },
       },
       {
         tagName: "button",
-        options: {
-          textContent: "Prev Month",
-          className: "btn btn--small btn--yellow",
-        },
+        properties: { textContent: "Prev Month", className: "btn btn--small btn--yellow" },
+        attributes: { "aria-label": "Prev Month" },
       },
     ];
 
-    const [calendarTitleEl, nextMonthBtn, prevMonthBtn] = elementsConfig.map(
-      ({ tagName, options }) => createElement(tagName, options)
+    const [calendarTitleEl, nextMonthBtn, prevMonthBtn] = elementsConfig.map((config) =>
+      createElement(config)
     );
 
     nextMonthBtn.addEventListener("click", () => {
@@ -275,6 +216,10 @@ function app(containerId) {
       state.uiState.selectedDate = new Date(
         selectedDate.setMonth(state.uiState.selectedDate.getMonth() + 1)
       );
+
+      state.uiState.headerDate = `${
+        MONTH_MAP[state.uiState.selectedDate.getMonth()]
+      }, ${state.uiState.selectedDate.getFullYear()}`;
 
       state.uiState.isEventsOpen = false;
     });
@@ -287,31 +232,30 @@ function app(containerId) {
           selectedDate.setMonth(selectedDate.getMonth() - 1)
         );
 
+        state.uiState.headerDate = `${
+          MONTH_MAP[state.uiState.selectedDate.getMonth()]
+        }, ${state.uiState.selectedDate.getFullYear()}`;
+
         state.uiState.isEventsOpen = false;
       }
     });
 
-    const { selectedDate } = state.uiState;
-
-    calendarTitleEl.textContent = `
-      ${MONTH_MAP[selectedDate.getMonth()]},
-      ${selectedDate.getFullYear()}
-    `;
+    calendarTitleEl.textContent = state.uiState.headerDate;
 
     containerEL.append(prevMonthBtn, calendarTitleEl, nextMonthBtn);
-  }
+  };
 
   /** This function creates array of month dates (from 1st to last) */
-  function createMonthDates(year, month) {
+  const createMonthDates = (year, month) => {
     const lastDate = new Date(year, month + 1, 0).getDate();
 
     return Array(lastDate)
       .fill(null)
       .map((date, index) => new Date(year, month, index + 1));
-  }
+  };
 
   /** this function creates and configure calendar grid */
-  function renderCalendarGrid(state, containerEl) {
+  const renderCalendarGrid = (state, containerEl) => {
     containerEl.innerHTML = "";
     const { currentDate, selectedDate } = state.uiState;
     const selectedYear = selectedDate.getFullYear();
@@ -349,14 +293,19 @@ function app(containerId) {
 
     // Fill the fragment with the markup for calendar date cells
     totalMonthDates.forEach((dateCell, index) => {
-      const calendarCellElem = createElement("div", { className: "calendar__cell" });
-      const isToday = dateCell.getTime() === currentDate.getTime();
+      const isToday = dateCell.toDateString() === new Date(currentDate).toDateString();
+      const calendarCellElem = createElement({
+        tagName: "div",
+        properties: { className: "calendar__cell" },
+      });
 
       const isSelected =
         dateCell.getTime() === selectedDate.getTime() && state.uiState.isEventsOpen;
 
       const eventsCount = state.events.reduce((acc, cur) => {
-        return cur.createdAt.toDateString() === dateCell.toDateString() ? acc + 1 : acc;
+        return new Date(cur.createdAt).toDateString() === dateCell.toDateString()
+          ? acc + 1
+          : acc;
       }, 0);
 
       /**
@@ -370,8 +319,8 @@ function app(containerId) {
         calendarCellElem.classList.add("calendar__cell--out-of-range");
       } else {
         calendarCellElem.addEventListener("click", () => {
-          watchedState.uiState.selectedDate = dateCell;
-          watchedState.uiState.isEventsOpen = true;
+          state.uiState.selectedDate = dateCell;
+          state.uiState.isEventsOpen = true;
         });
       }
 
@@ -397,53 +346,215 @@ function app(containerId) {
     });
 
     containerEl.append(fragment);
-  }
+  };
+
+  /** this function renders confirm modal and
+   * accepts onConfirm and onCancel callbacks
+   */
+  const renderConfirm = ({ state, containerEl, onConfirm, onCancel }) => {
+    const { isVisible, text } = state.uiState.confirm;
+    containerEl.innerHTML = "";
+
+    if (!isVisible) {
+      return;
+    }
+
+    // prettier-ignore
+    const elementsConfig = [
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal todo-list__confirm", innerHTML: `` },
+      },
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal__body" },
+      },
+      {
+        tagName: "p",
+        properties: { className: "confirm-modal__text", textContent: text, },
+      },
+      {
+        tagName: "div",
+        properties: { className: "confirm-modal__controls" },
+      },
+      {
+        tagName: "button",
+        properties: { className: "confirm-modal__btn btn", textContent: "Confirm" },
+        attributes: { "aria-label": "Confirm", },
+      },
+      {
+        tagName: "button",
+        properties: { className: "confirm-modal__btn btn btn--grey", textContent: "Cancel" },
+        attributes: { "aria-label": "Cancel" },
+      },
+    ];
+
+    const [wrapperEl, contentEl, textEl, controlsEl, confirmBtn, cancelBtn] =
+      elementsConfig.map((config) => createElement(config));
+
+    const handleCloseConfirm = (callback) => {
+      if (callback) {
+        callback(state);
+      }
+
+      state.uiState.confirm = {
+        isVisible: false,
+        text: null,
+      };
+    };
+
+    confirmBtn.addEventListener("click", () => {
+      handleCloseConfirm(onConfirm);
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      handleCloseConfirm(onCancel);
+    });
+
+    wrapperEl.addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) {
+        handleCloseConfirm();
+      }
+    });
+
+    controlsEl.append(confirmBtn, cancelBtn);
+    contentEl.append(textEl, controlsEl);
+    wrapperEl.append(contentEl);
+    containerEl.append(wrapperEl);
+  };
+
+  const storeData = (propName, data) => {
+    localStorage.setItem(propName, JSON.stringify(data));
+  };
 
   /** this function creates, configure and returns main layout containers */
-  function initLayout(containerId) {
+  const initLayout = (containerId) => {
     const container = document.getElementById(containerId);
     container.classList.add("calendar");
 
     const elementsConfig = [
-      { tagName: "div", options: { className: "calendar__head" } },
-      { tagName: "div", options: { className: "calendar__grid" } },
-      { tagName: "div", options: { className: "calendar__events" } },
-      { tagName: "div", options: { className: "calendar__form" } },
-      { tagName: "div", options: { className: "calendar__legend" } },
+      { tagName: "div", properties: { className: "calendar__head" } },
+      { tagName: "div", properties: { className: "calendar__grid" } },
+      { tagName: "div", properties: { className: "calendar__events" } },
+      { tagName: "div", properties: { className: "calendar__form" } },
+      { tagName: "div", properties: { className: "calendar__legend" } },
+      { tagName: "div", properties: { className: "calendar__modal" } },
     ];
 
-    const [head, grid, events, form, legend] = elementsConfig.map(
-      ({ tagName, options }) => createElement(tagName, options)
+    const [head, grid, events, form, legend, modal] = elementsConfig.map((config) =>
+      createElement(config)
     );
 
     WEEK_DAY_MAP.forEach((dayName) => {
-      const legendItem = createElement("div", {
-        className: "calendar__legend-item",
-        textContent: dayName,
+      const legendItem = createElement({
+        tagName: "div",
+        properties: { className: "calendar__legend-item", textContent: dayName },
       });
       legend.append(legendItem);
     });
 
-    container.append(head, legend, grid, form, events);
+    container.append(head, legend, grid, form, events, modal);
 
-    return {
-      head,
-      grid,
-      events,
-      form,
+    return { head, grid, events, form, modal };
+  };
+
+  /**
+   * This function triggers every time we reassign the
+   * values of properties of the tracked object
+   */
+  const render = (containers) => {
+    return function (path, value, prevValue) {
+      switch (path) {
+        case "events":
+          storeData("events", this.events);
+        case "uiState.selectedDate": {
+          renderCalendarGrid(this, containers.grid);
+          renderEvents(this, containers.events);
+          break;
+        }
+        case "uiState.headerDate": {
+          renderCalendarHead(this, containers.head);
+          break;
+        }
+        case "uiState.isEventsOpen": {
+          renderCalendarGrid(this, containers.grid);
+          renderEventForm(this, containers.form);
+          renderEvents(this, containers.events);
+          break;
+        }
+        case "uiState.confirm": {
+          renderConfirm({
+            state: this,
+            containerEl: containers.modal,
+            onConfirm: (state) => {
+              const { itemId } = state.uiState.confirm;
+              state.events = state.events.filter((e) => e.id !== itemId);
+            },
+          });
+          break;
+        }
+      }
     };
+  };
+
+  // prettier-ignore
+  const MONTH_MAP = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", ];
+  const WEEK_DAY_MAP = ["Mon", "Tur", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const initialState = {
+    events: [],
+    uiState: {
+      isEventsOpen: false,
+      currentDate: null,
+      selectedDate: null,
+      headerDate: null,
+      confirm: {
+        itemId: null,
+        isVisible: false,
+        text: null,
+      },
+    },
+  };
+
+  let storedEvents = [];
+
+  try {
+    storedEvents = JSON.parse(localStorage.getItem("events")) || [];
+  } catch (e) {
+    console.error(
+      `An error occurred during the parsing of calendar data from Local Storage. ${e.message}`
+    );
   }
 
-  // Just simple utility function
-  function createElement(tagName, props = {}) {
-    const element = document.createElement(tagName);
+  const containers = initLayout(containerId);
+  const watchedState = onChange(initialState, render(containers));
+  const todayDate = new Date();
+  const todayMonth = MONTH_MAP[todayDate.getMonth()];
+  const todayYear = todayDate.getFullYear();
 
-    for (let prop in props) {
-      element[prop] = props[prop];
+  /**
+   * initialising calendar values and fires first
+   * rerendering of the app
+   */
+  watchedState.uiState.headerDate = `${todayMonth}, ${todayYear}`;
+  watchedState.uiState.currentDate = todayDate;
+  watchedState.uiState.selectedDate = new Date(todayDate);
+  watchedState.events = storedEvents.reduce((acc, cur) => {
+    try {
+      const createdAt = new Date(cur.createdAt);
+      if (createdAt instanceof Date && !isNaN(createdAt)) {
+        return [...acc, { ...cur, createdAt }];
+      }
+      throw new Error(`Invalid date string format. Event id: ${cur.id}`);
+    } catch (e) {
+      console.error({
+        message: e.message,
+        stack: e.stack,
+      });
     }
 
-    return element;
-  }
+    return acc;
+  }, []);
 }
 
 app("events-calendar");
