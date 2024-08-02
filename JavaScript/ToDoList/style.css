@@ -1,0 +1,251 @@
+:root {
+  font: 12px/20px Arial, sans-serif;
+  color: black;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/*#region form elements -----------------------------------*/
+
+.input-text,
+.textarea {
+  color: inherit;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  padding: 8px 0;
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid black;
+  outline: none;
+  background-color: transparent;
+  width: 100%;
+  display: block;
+}
+
+.input-text::placeholder,
+.textarea::placeholder {
+  color: lightgrey;
+}
+
+.textarea {
+  min-height: 100px;
+}
+
+.input-text--white,
+.textarea--white {
+  color: white;
+  border-bottom: 2px solid white;
+}
+
+.input-text:focus,
+.textarea:focus {
+  border-bottom: 2px solid yellow;
+}
+
+/*#endregion form elements -----------------------------------*/
+
+/*#region btn ------------------------------------------------*/
+
+.btn {
+  appearance: button;
+  background-color: black;
+  border: 1px solid black;
+  box-shadow: white 4px 4px 0 0, black 4px 4px 0 1px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  padding: 8px 20px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn:focus,
+.btn:hover {
+  text-decoration: none;
+  text-decoration: none;
+
+  background-color: rgb(60, 60, 60);
+}
+
+.btn:active {
+  outline: 0;
+  box-shadow: #fff 2px 2px 0 0, #000 2px 2px 0 1px;
+  transform: translate(2px, 2px);
+}
+
+.btn--yellow {
+  background-color: yellow;
+  color: black;
+}
+
+.btn--yellow:hover {
+  background-color: rgb(235, 235, 0);
+}
+
+.btn--grey {
+  background-color: rgb(228, 228, 228);
+  color: black;
+}
+
+.btn--grey:hover {
+  background-color: rgb(216, 216, 216);
+}
+
+.btn--white {
+  background-color: #fff;
+  color: black;
+  box-shadow: black 4px 4px 0 0, white 4px 4px 0 1px;
+}
+
+.btn--white:hover {
+  background-color: rgb(230, 230, 230);
+}
+
+.btn--small {
+  font-size: 10px;
+  line-height: 16px;
+  padding: 6px 16px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.btn--large {
+  font-size: 14px;
+  line-height: 20px;
+  padding: 14px 28px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/*#endregion btn ---------------------------------------------*/
+
+/*#region todo-list ------------------------------------------*/
+
+.todo-list {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.todo-list__header {
+  display: flex;
+  gap: 20px;
+  padding: 18px 18px 20px;
+  border: 1px solid black;
+  border-bottom: 1px dotted black;
+  background-color: lightgray;
+}
+
+.todo-list__tasks {
+  border: 1px solid black;
+  border-top: none;
+  margin-bottom: 20px;
+}
+
+.todo-list__task-card {
+  border-bottom: 1px solid black;
+}
+
+.todo-list__task-card:last-child {
+  border-bottom: none;
+}
+
+/*#endregion todo-list ---------------------------------------*/
+
+/*#region task-card ------------------------------------------*/
+
+.task-card {
+  padding: 20px;
+  display: grid;
+  align-items: start;
+  gap: 10px 20px;
+  grid-template-columns: 1fr 170px;
+  grid-template-rows: min-content 1fr;
+}
+
+.task-card--blank {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.task-card__title {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0 0 10px;
+}
+
+.task-card__inner {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.task-card__description {
+  margin: 0;
+}
+
+.task-card__btn {
+  grid-column: 2;
+}
+
+/*#endregion task-card ---------------------------------------*/
+
+/*#region add-form -------------------------------------------*/
+
+.add-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  background-color: black;
+  padding: 20px 30px 30px;
+  color: white;
+}
+
+/*#endregion add-form ----------------------------------------*/
+
+/*#region confirm modal --------------------------------------*/
+
+.confirm-modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.confirm-modal__body {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  width: 400px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.confirm-modal__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: bold;
+}
+
+.confirm-modal__controls {
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  display: flex;
+  gap: 20px;
+}
+
+/*#region confirm modal --------------------------------------*/
