@@ -1,126 +1,156 @@
 class FormVaildator {
-  constructor({ element, controls = [], onSubmit, validateOn = {} }) {
-    this.formElement = null;
-    this.formControls = null;
-    this.onSubmit = onSubmit;
-    this.validations = null;
-    this.validateOn = {
-      change: true,
-      blur: false,
-      input: false,
-      ...validateOn,
-    };
+  #isValid = false;
+  #isSubmitting = false;
+  #validateOn = {
+    change: true,
+    blur: false,
+    focus: false,
+    input: false,
+  };
 
-    this.#init(element, controls);
-    this.#handleValidate(this.formControls, this.validateOn);
+  constructor({ formElement, controls = [], onSubmit, validateOn = {} }) {
+    this.formElement = null;
+    this.controls = {};
+    this.errors = {};
+    this.tooltips = {};
+    this.validities = {};
+
+    this.#validateOn = { ...this.#validateOn, ...validateOn };
+    this.#init(formElement, controls, onSubmit);
   }
 
-  #handleValidate(controls, validateOn) {
-    const eventEntries = Object.entries(validateOn);
+  #handleValidateOn() {
+    const eventEntries = Object.entries(this.#validateOn);
 
-    eventEntries.forEach(([event, shouldTrigger]) => {
+    eventEntries.forEach(([eventType, shouldTrigger]) => {
       if (shouldTrigger) {
-        controls.forEach((control) => {
-          control.touched = true;
-          control.element.addEventListener(event, () => {
-            this.#checkValidity(control);
+        const controlEntries = Object.entries(this.controls);
+
+        controlEntries.forEach((entry) => {
+          const [name, control] = entry;
+          control.element.addEventListener(eventType, () => {
+            control.touched = true;
+            this.#checkControlValidity(name);
           });
         });
       }
     });
   }
 
-  #init(element, controls) {
-    try {
-      this.#initForm(element);
-      this.#initControls(controls);
-      console.log(this.formControls);
+  #init(formElement, controls, onSubmit) {
+    this.#initForm(formElement, onSubmit);
+    this.#initControls(controls);
+    this.#handleValidateOn();
 
-      this.formControls.forEach((item) => this.#checkValidity(item));
-    } catch (e) {
-      console.error(e);
-    }
+    Object.keys(this.controls).forEach((name) => this.#checkControlValidity(name));
+
+    console.log(this);
   }
 
-  #initForm(formElement) {
+  #initForm(formElement, onSubmit) {
     formElement.noValidate = true;
+
     formElement.addEventListener("submit", (e) => {
       e.preventDefault();
+      this.#isSubmitting = true;
 
-      this.formControls.forEach((control) => this.#checkValidity(control));
+      const controls = Object.keys(this.controls);
+      controls.forEach((name) => this.#checkControlValidity(name));
 
-      this.onSubmit(e);
+      this.#checkFormValidity();
+
+      if (this.#isValid) {
+        onSubmit(e);
+      }
     });
+
     this.formElement = formElement;
   }
 
-  #initControls(formControls) {
-    this.formControls = Array.from(formControls).map((control) => {
-      const { name, tooltip = null, validities = [] } = control;
+  #checkFormValidity() {
+    this.#isValid = Object.values(this.errors).every(
+      ({ messages }) => messages.length === 0
+    );
+  }
 
-      const element = this.formElement.querySelector(`[name="${name}"]`);
-      const errorsContainer = document.createElement("div");
-      errorsContainer.classList.add("validation-errors");
-      element.insertAdjacentElement("afterend", errorsContainer);
+  #initControls(controls) {
+    controls.forEach((control) => {
+      const { name, tooltips = [], validities = [], touched = false } = control;
 
-      return {
-        element,
-        tooltip,
-        validities,
-        errors: [],
-        errorsContainer,
-        touched: false,
+      this.controls[name] = {
+        element: this.formElement.querySelector(`[name="${name}"]`),
+        touched,
       };
+
+      this.errors[name] = {
+        container: null,
+        messages: [],
+      };
+
+      this.tooltips[name] = tooltips;
+      this.validities[name] = validities;
     });
   }
 
-  #renderErrors(control) {
-    control.errorsContainer.innerHTML = "";
+  #renderError(name) {
+    const { element } = this.controls[name];
+    const errors = this.errors[name];
 
-    control.errors.forEach((error) => {
-      const errorEl = document.createElement("span");
-      errorEl.classList.add("validation-errors__item");
-      errorEl.textContent = error;
-      control.errorsContainer.append(errorEl);
+    if (!errors.container) {
+      const container = document.createElement("div");
+      container.classList.add("validity-errors");
+      errors.container = container;
+      element.after(container);
+    }
+
+    errors.container.innerHTML = "";
+
+    errors.messages.forEach((message) => {
+      errors.container.innerHTML += `<p class="validity-errors__item">${message}</p>`;
     });
   }
 
-  #clearErrors(control) {
-    control.errors = [];
-    control.errorsContainer.innerHTML = "";
+  #setError(name, message) {
+    const errors = this.errors[name];
+    errors.messages.push(message);
+    this.#renderError(name);
   }
 
-  #checkValidity(control) {
+  #clearError(name) {
+    const errors = this.errors[name];
+
+    if (errors.container) {
+      errors.container.innerHTML = "";
+    }
+
+    errors.messages = [];
+  }
+
+  #checkControlValidity(name) {
     // prettier-ignore
     const validityChecks = {
-      name: (control) =>
-        control.value.length === 0 || control.value.match(/^[a-z ,.'-]+$/i),
-      minLength: (control, minLength) =>
-        control.value.length === 0 || control.value.length >= minLength,
-      email: (control) =>
-        control.value.length === 0 ||
-        control.value.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g),
-      password: (control) =>
-        control.value.length === 0 ||
-        control.value.match(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/),
-      required: (control) => !!control.value.trim(),
-      match: (control, fieldName) => {
-        const targetControl = this.formControls.find((c) => c.element.name === fieldName);
-        return (
-          control.value.length === 0 || control.value === targetControl.element.value
-        );
+      name: (value) => (value.length === 0) || value.match(/^[a-z ,.'-]+$/i),
+      minLength: (value, minLength) => (value.length === 0) || value.length >= minLength,
+      email: (value) => (value.length === 0) || value.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g),
+      password: (value) => (value.length === 0) || value.match(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/),
+      required: (value) => !!value.trim(),
+      match: (value, name) => {
+        const targetControl = this.controls[name].element;
+        return value.length === 0 || value === targetControl.value;
       },
     };
 
-    this.#clearErrors(control);
+    this.#clearError(name);
 
-    control.validities.forEach((validity) => {
+    const { element, touched } = this.controls[name];
+    const { value } = element;
+
+    this.validities[name].forEach((validity) => {
       const checkFn = validityChecks[validity.name];
-      const isValid = checkFn(control.element, validity.value);
+      const isValid = checkFn(value, validity.value);
 
-      if (!isValid && control.touched) {
-        control.errors.push(validity.message);
-        this.#renderErrors(control);
+      if ((!isValid && touched) || (!isValid && this.#isSubmitting)) {
+        this.#setError(name, validity.message);
       }
     });
   }
@@ -128,11 +158,11 @@ class FormVaildator {
 
 // prettier-ignore
 new FormVaildator({
-  element: document.getElementById("registration"),
+  formElement: document.getElementById("registration"),
   controls: [
     {
       name: "name",
-      tooltip: "I am a tooltip",
+      tooltips: ["I am a tooltip"],
       validities: [
         { name: "name", message: "Enter valid name" },
         { name: "required", message: "This field is required" },
@@ -140,45 +170,34 @@ new FormVaildator({
     },
     {
       name: "email",
-      tooltip: "I am a tooltip",
+      tooltips: ["I am a tooltip"],
       validities: [
-        // { name: "minLength", value: 3, message: "Min 3 symbols" },
         { name: "email", message: "Invalid email" },
         { name: "required", message: "This field is required" },
       ],
     },
     {
       name: "password",
-      tooltip: "I am a tooltip",
+      tooltips: ["I am a tooltip"],
       validities: [
         { name: "required", message: "This field is required" },
-        {
-          name: "password",
-          value: 8,
-          message:
-            "This field must have minimum 8 characters, at least one letter and one number:",
-        },
+        { name: "password", message: "This field must have minimum 8 characters, at least 1 letter and 1 number"},
       ],
     },
     {
       name: "confirmPassword",
-      tooltip: "I am a tooltip",
+      tooltips: ["I am a tooltip"],
       validities: [
-        {
-          name: "match",
-          value: "password",
-          message: "The confirmation password must match the password",
-        },
+        { name: "match", value: "password", message: "The confirmation password must match the password"},
         { name: "required", message: "This field is required" },
       ],
     },
   ],
   validateOn: {
     change: true,
-    input: true,
+    input: true
   },
   onSubmit: () => {
     console.log("submit");
-  },
-  customValidation: () => {},
+  }
 });
