@@ -30,7 +30,7 @@ class FormVaildator {
           const [name, control] = entry;
           control.element.addEventListener(eventType, () => {
             control.touched = true;
-            this.#checkControlValidity(name);
+            this.checkControlValidity(name);
           });
         });
       }
@@ -41,8 +41,9 @@ class FormVaildator {
     this.#initForm(formElement, onSubmit);
     this.#initControls(controls);
     this.#handleValidateOn();
+    this.#renderTooltips();
 
-    Object.keys(this.controls).forEach((name) => this.#checkControlValidity(name));
+    Object.keys(this.controls).forEach((name) => this.checkControlValidity(name));
 
     console.log(this);
   }
@@ -54,10 +55,7 @@ class FormVaildator {
       e.preventDefault();
       this.#isSubmitting = true;
 
-      const controls = Object.keys(this.controls);
-      controls.forEach((name) => this.#checkControlValidity(name));
-
-      this.#checkFormValidity();
+      this.checkFormValidity();
 
       if (this.#isValid) {
         onSubmit(e);
@@ -67,18 +65,15 @@ class FormVaildator {
     this.formElement = formElement;
   }
 
-  #checkFormValidity() {
-    this.#isValid = Object.values(this.errors).every(
-      ({ messages }) => messages.length === 0
-    );
-  }
-
   #initControls(controls) {
     controls.forEach((control) => {
       const { name, tooltips = [], validities = [], touched = false } = control;
 
+      const element = this.formElement.querySelector(`[name="${name}"]`);
+      element.classList.add("validator__field");
+
       this.controls[name] = {
-        element: this.formElement.querySelector(`[name="${name}"]`),
+        element,
         touched,
       };
 
@@ -98,35 +93,64 @@ class FormVaildator {
 
     if (!errors.container) {
       const container = document.createElement("div");
-      container.classList.add("validity-errors");
+      container.classList.add("validator__errors");
       errors.container = container;
       element.after(container);
     }
 
+    element.classList.add("validator__field--error");
     errors.container.innerHTML = "";
-
+    errors.container.style = "";
     errors.messages.forEach((message) => {
-      errors.container.innerHTML += `<p class="validity-errors__item">${message}</p>`;
+      errors.container.innerHTML += `<p class="validator__error-item">${message}</p>`;
     });
   }
 
-  #setError(name, message) {
+  #renderTooltips() {
+    const entries = Object.entries(this.tooltips);
+
+    entries.forEach(([name, tooltips]) => {
+      const { element } = this.controls[name];
+
+      const container = document.createElement("div");
+      container.classList.add("validator__tooltips");
+      element.after(container);
+
+      tooltips.forEach((tooltip) => {
+        container.innerHTML += `<p class="validator__error-item">${tooltip}</p>`;
+      });
+    });
+  }
+
+  checkFormValidity() {
+    const controls = Object.keys(this.controls);
+    controls.forEach((name) => this.checkControlValidity(name));
+
+    this.#isValid = Object.values(this.errors).every(
+      ({ messages }) => messages.length === 0
+    );
+  }
+
+  setError(name, message) {
     const errors = this.errors[name];
     errors.messages.push(message);
     this.#renderError(name);
   }
 
-  #clearError(name) {
+  clearError(name) {
+    const { element } = this.controls[name];
     const errors = this.errors[name];
 
     if (errors.container) {
       errors.container.innerHTML = "";
+      errors.container.style.display = "none";
     }
 
+    element.classList.remove("validator__field-error");
     errors.messages = [];
   }
 
-  #checkControlValidity(name) {
+  checkControlValidity(name) {
     // prettier-ignore
     const validityChecks = {
       name: (value) => (value.length === 0) || value.match(/^[a-z ,.'-]+$/i),
@@ -140,7 +164,7 @@ class FormVaildator {
       },
     };
 
-    this.#clearError(name);
+    this.clearError(name);
 
     const { element, touched } = this.controls[name];
     const { value } = element;
@@ -150,7 +174,7 @@ class FormVaildator {
       const isValid = checkFn(value, validity.value);
 
       if ((!isValid && touched) || (!isValid && this.#isSubmitting)) {
-        this.#setError(name, validity.message);
+        this.setError(name, validity.message);
       }
     });
   }
@@ -161,43 +185,43 @@ new FormVaildator({
   formElement: document.getElementById("registration"),
   controls: [
     {
+      tooltips: ["Enter your name.", "Only latin characters, symbols «`» and «-» are allowed."],
       name: "name",
-      tooltips: ["I am a tooltip"],
       validities: [
-        { name: "name", message: "Enter valid name" },
-        { name: "required", message: "This field is required" },
+        { name: "name", message: "Enter valid name." },
+        { name: "required", message: "This field is required." },
       ],
     },
     {
       name: "email",
-      tooltips: ["I am a tooltip"],
+      tooltips: ["Enter your email address." ],
       validities: [
-        { name: "email", message: "Invalid email" },
-        { name: "required", message: "This field is required" },
+        { name: "email", message: "Invalid email." },
+        { name: "required", message: "This field is required." },
       ],
     },
     {
       name: "password",
-      tooltips: ["I am a tooltip"],
+      tooltips: ["Enter your password.", "Minimum 8 characters, at least 1 letter and 1 number." ],
       validities: [
-        { name: "required", message: "This field is required" },
-        { name: "password", message: "This field must have minimum 8 characters, at least 1 letter and 1 number"},
+        { name: "password", message: "This field must have minimum 8 characters, at least 1 letter and 1 number." },
+        { name: "required", message: "This field is required." },
       ],
     },
     {
       name: "confirmPassword",
-      tooltips: ["I am a tooltip"],
+      tooltips: ["Repeat password again."],
       validities: [
-        { name: "match", value: "password", message: "The confirmation password must match the password"},
-        { name: "required", message: "This field is required" },
+        { name: "required", message: "This field is required." },
+        { name: "match", value: "password", message: "The confirmation password must match the password." },
       ],
     },
   ],
   validateOn: {
     change: true,
-    input: true
+    input: true,
   },
   onSubmit: () => {
     console.log("submit");
-  }
+  },
 });

@@ -8,43 +8,46 @@
   </head>
   <body>
     <form method="post" class="form" id="registration">
-      <label for="name" class="label">
-        <span class="label__title">Name</span>
-        <input type="text" class="input-text label__control" name="name" id="name" />
-      </label>
-      <label for="email" class="label">
-        <span class="label__title">Email</span>
-        <input
-          type="email"
-          class="input-text label__control"
-          name="email"
-          id="email"
-          data-validation="email"
-        />
-      </label>
-      <label for="password" class="label">
-        <span class="label__title">Password</span>
-        <input
-          type="password"
-          class="input-text label__control"
-          name="password"
-          id="password"
-          data-validation="password"
-        />
-      </label>
-      <label for="confirmPassword" class="label">
-        <span class="label__title">Confirm password</span>
-        <input
-          value="123"
-          type="password"
-          class="input-text label__control"
-          name="confirmPassword"
-          id="confirmPassword"
-          data-validation="passwordConfirm"
-        />
-      </label>
+      <div class="form__body">
+        <label for="name" class="label form__row">
+          <span class="label__title">Name</span>
+          <input type="text" class="input-text label__control" name="name" id="name" />
+        </label>
+        <label for="email" class="label form__row">
+          <span class="label__title">Email</span>
+          <input
+            type="email"
+            class="input-text label__control"
+            name="email"
+            id="email"
+            data-validation="email"
+          />
+        </label>
+        <label for="password" class="label form__row">
+          <span class="label__title">Password</span>
+          <input
+            type="password"
+            class="input-text label__control"
+            name="password"
+            id="password"
+            data-validation="password"
+          />
+        </label>
+        <label for="confirmPassword" class="label form__row">
+          <span class="label__title">Confirm password</span>
+          <input
+            type="password"
+            class="input-text label__control"
+            name="confirmPassword"
+            id="confirmPassword"
+            data-validation="passwordConfirm"
+          />
+        </label>
+      </div>
 
-      <button type="submit" class="btn">Register</button>
+      <div class="form__controls">
+        <button type="submit" class="btn btn--large btn--yellow">Register</button>
+      </div>
     </form>
 
     <script src="./app.js"></script>
