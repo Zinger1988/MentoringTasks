@@ -39,23 +39,41 @@ class CharacterImage {
 
   async #calcAnimationDuration({ baseUrl, characterName, animationName }) {
     return fetch(`${baseUrl}/${characterName}/${animationName}.gif`)
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
       .then((res) => res.arrayBuffer())
       .then((ab) => {
         return (this.animations[animationName] = {
           duration: this.#isGifAnimated(new Uint8Array(ab)),
           arrayBuffer: new Uint8Array(ab),
         });
+      })
+      .catch((error) => {
+        console.error("Failed to load animation", error);
+        return (this.animations[animationName] = {
+          duration: 0,
+          arrayBuffer: null,
+        });
       });
   }
 
   #isGifAnimated(uint8) {
     let duration = 0;
+    const GIF_BLOCK_TYPE = 0x21;
+    const EXTENSION_INTRODUCER = 0xf9;
+    const GRAPHIC_CONTROL_LABEL = 0x04;
+    const TERMINATOR = 0x00;
+
     for (let i = 0, len = uint8.length; i < len; i++) {
       if (
-        uint8[i] == 0x21 &&
-        uint8[i + 1] == 0xf9 &&
-        uint8[i + 2] == 0x04 &&
-        uint8[i + 7] == 0x00
+        uint8[i] === GIF_BLOCK_TYPE &&
+        uint8[i + 1] === EXTENSION_INTRODUCER &&
+        uint8[i + 2] === GRAPHIC_CONTROL_LABEL &&
+        uint8[i + 7] === TERMINATOR
       ) {
         const delay = (uint8[i + 5] << 8) | (uint8[i + 4] & 0xff);
         duration += delay < 2 ? 10 : delay;
@@ -114,16 +132,14 @@ class Character {
 
     return new Promise((resolve) => {
       this.status = "attack";
-
-      let damageRate = this.attackRate;
-      let animationName = `attack${Math.ceil(Math.random() * 3)}`;
+      const animationName = `attack${Math.ceil(Math.random() * 3)}`;
 
       this.#images.loadImage(animationName);
       const { duration } = this.#images.animations[animationName];
 
       setTimeout(() => {
         this.idle();
-        resolve(opponent.#applyDamage({ damage: damageRate, opponent: this }));
+        resolve(opponent.#applyDamage({ damage: this.attackRate, opponent: this }));
       }, duration);
     });
   }
@@ -263,6 +279,19 @@ class Game {
   }
 
   init(playerCharacter, pcCharacter) {
+    try {
+      const container = document.getElementById("game");
+
+      if (container === null) {
+        throw Error('Unable to find app root html element (id="game")');
+      }
+
+      this.container = container;
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
     this.playerCharacter = new Character({
       ...playerCharacter,
       isPlayer: true,
@@ -295,7 +324,6 @@ class Game {
       health: this.computerCharacter.health,
     });
 
-    this.container = document.getElementById("game");
     this.container.classList.add("game");
 
     this.startScreen = document.createElement("div");
@@ -381,7 +409,7 @@ const CHARACTERS = {
   troll: {
     name: "Ugly troll",
     health: 115,
-    attackRate: 35,
+    attackRate: 40,
     defenceRate: 0.6,
     images: new CharacterImage("troll"),
   },
@@ -389,7 +417,7 @@ const CHARACTERS = {
     name: "Black Knight",
     health: 100,
     attackRate: 30,
-    defenceRate: 0.9,
+    defenceRate: 0.8,
     images: new CharacterImage("heavyKnight"),
   },
 };
