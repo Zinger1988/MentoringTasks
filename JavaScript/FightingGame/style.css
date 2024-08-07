@@ -1,0 +1,197 @@
+body {
+  margin: 0;
+  padding: 0;
+  font: 16px/1.5 "Pixelify Sans", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.game {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: url("./assets/bg/arena.jpg") center / cover;
+  overflow: hidden;
+}
+
+.game .character {
+  position: absolute;
+  height: 100%;
+  aspect-ratio: 1/1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-20%, -40%) rotateY(180deg);
+  z-index: 5;
+}
+
+.game .character img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.game .character--player {
+  transform: translate(-80%, -40%);
+  z-index: 10;
+}
+
+.health-scale {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  width: calc(50% - 140px);
+  height: 50px;
+  border: 3px solid white;
+  border-left-width: 5px;
+  border-right-width: 5px;
+  transform: skew(45deg);
+  transform-origin: right bottom;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.health-scale--player {
+  left: 20px;
+  right: auto;
+  transform: skew(-45deg);
+  transform-origin: left bottom;
+}
+
+.health-scale__item {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: red url("./assets/interface/scale-bg.jpg") center / auto 100% repeat-x;
+  transition: width steps(5, jump-both) 0.3s;
+}
+
+.health-scale--player .health-scale__item {
+  left: 0;
+  right: auto;
+}
+
+.health-scale--warning {
+  border-color: white;
+  animation: damage-warning 1s steps(5, jump-both) infinite;
+}
+
+@keyframes damage-warning {
+  0% {
+    border-color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    border-color: #dada00;
+    background-color: rgba(255, 238, 0, 0.3);
+  }
+  100% {
+    border-color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+}
+
+.health-scale__name {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: skew(-30deg) translateY(-50%);
+  z-index: 10;
+  font-size: 30px;
+}
+
+.health-scale--player .health-scale__name {
+  left: 40px;
+  right: auto;
+  top: 50%;
+  transform: skew(45deg) translateY(-50%);
+}
+
+.game__guide {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  width: 100%;
+  padding: 20px;
+}
+
+.game__guide-img {
+  display: block;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.game__screen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 56px;
+  text-align: center;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: white;
+}
+
+.start-screen {
+  background: black url("./assets/bg/knight.jpg") center / cover;
+}
+
+.start-screen__text {
+  animation: blink 1.5s steps(1) infinite;
+}
+
+.gameover-screen {
+  background: black url("./assets/bg/troll.jpg") center / cover;
+}
+
+.gameover-screen__text {
+  animation: blink 1.5s steps(1) infinite;
+  margin: 0 0 10px;
+}
+
+.game__tip {
+  position: absolute;
+  color: white;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  bottom: 20px;
+  color: white;
+  z-index: 100;
+  animation: blink 1.5s steps(1) infinite;
+  text-align: center;
+  font-size: 32px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.game__tip--hidden {
+  display: none;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
