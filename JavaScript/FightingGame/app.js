@@ -132,7 +132,8 @@ class Character {
 
     return new Promise((resolve) => {
       this.status = "attack";
-      const animationName = `attack${Math.ceil(Math.random() * 3)}`;
+      const attackAnimationsCount = 3;
+      const animationName = `attack${Math.ceil(Math.random() * attackAnimationsCount)}`;
 
       this.#images.loadImage(animationName);
       const { duration } = this.#images.animations[animationName];
@@ -145,7 +146,8 @@ class Character {
   }
 
   async #applyDamage({ damage, opponent }) {
-    const isDefending = Math.random() >= 0.33;
+    const probabilityOfattack = 0.33;
+    const isDefending = Math.random() >= probabilityOfattack;
     const defendingStatus = isDefending ? "defend" : "damage";
     const { duration } = this.#images.animations[defendingStatus];
 
