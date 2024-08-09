@@ -11,6 +11,7 @@ const weatherStation = new WeatherStation({
       const { lat, lon: lng } = data;
       const { placeName } = await gmap.getClosestPlaceByCoords({ lat, lng });
       weatherStation.placeName = placeName;
+      console.log(placeName);
     },
   },
 });
@@ -31,7 +32,7 @@ const gmap = new GMap({
       }
 
       weatherStation.placeName = initialPlace.placeName;
-      await weatherStation.updateWeatherData({
+      await weatherStation.fetchWeatherData({
         lat: initialPlace.lat,
         lng: initialPlace.lng,
       });
@@ -44,5 +45,5 @@ gmap.map.addListener("click", async (e) => {
   const { placeName, lng, lat } = await gmap.getClosestPlaceByCoords(selectedCoords);
 
   weatherStation.placeName = placeName;
-  await weatherStation.updateWeatherData({ lat, lng });
+  await weatherStation.fetchWeatherData({ lat, lng });
 });

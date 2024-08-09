@@ -1,4 +1,4 @@
-const OPEN_WEATHER_API_KEY = "OPEN_WEATHER_API_KEY: ";
+const OPEN_WEATHER_API_KEY = "OPEN_WEATHER_API_KEY";
 
 class WeatherStation {
   constructor({ rootSelector, callbacks = {} }) {
@@ -55,7 +55,29 @@ class WeatherStation {
     this.#handleSearch();
   }
 
-  #handleSearch() {
+  async #fetchWeatherByPlaceName(placeName) {
+    if (placeName.length === 0) {
+      return [];
+    }
+
+    try {
+      const response = await fetch(
+        `http://api.openweathermap.org/geo/1.0/direct?q=${placeName}&lang=en&limit=5&appid=${OPEN_WEATHER_API_KEY}`
+      );
+
+      if (!response.ok) throw Error(response.statusText);
+
+      const responseData = await response.json();
+
+      if (!Array.isArray(responseData)) throw Error(responseData);
+
+      return responseData;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async #handleSearch() {
     const { searchControl, autocompleteList } = this.elements;
     let debounceTimer = null;
 
@@ -65,75 +87,74 @@ class WeatherStation {
 
       debounceTimer = setTimeout(async () => {
         const value = e.target.value.trim();
+        const places = await this.#fetchWeatherByPlaceName(value);
 
-        if (value.length === 0) {
-          return;
-        }
+        const items = places.map((data) => {
+          const { local_names, lat, lon: lng, name, state, country } = data;
 
-        try {
-          const response = await fetch(
-            `http://api.openweathermap.org/geo/1.0/direct?q=${value}&lang=en&limit=5&appid=${OPEN_WEATHER_API_KEY}`
-          );
+          const placeName = local_names?.uk ?? name;
+          const placeState = state ? `, ${state}` : "";
+          const placeCountry = country ? `, ${country}` : "";
 
-          if (!response.ok) {
-            throw Error(response.statusText);
-          }
+          const listItem = document.createElement("li");
+          listItem.classList.add("weather__autocomplete-item");
+          listItem.textContent = `#${placeName}${placeState}${placeCountry}`;
 
-          const responseData = await response.json();
+          listItem.addEventListener("click", async (e) => {
+            autocompleteList.innerHTML = "";
+            searchControl.value = "";
 
-          if (!Array.isArray(responseData)) {
-            throw Error(responseData);
-          }
+            if (typeof this.callbacks?.onAutocompleteSelect === "function") {
+              await this.callbacks.onAutocompleteSelect(e, data);
+            }
 
-          const items = responseData.map((data) => {
-            const { local_names, lat, lon: lng, name, state, country } = data;
-
-            const placeName = local_names?.uk ?? name;
-            const placeState = state ? `, ${state}` : "";
-            const placeCountry = country ? `, ${country}` : "";
-
-            const listItem = document.createElement("li");
-            listItem.classList.add("weather__autocomplete-item");
-            listItem.textContent = `#${placeName}${placeState}${placeCountry}`;
-
-            listItem.addEventListener("click", async (e) => {
-              autocompleteList.innerHTML = "";
-              searchControl.value = "";
-
-              if (typeof this.callbacks?.onAutocompleteSelect === "function") {
-                await this.callbacks.onAutocompleteSelect(e, data);
-              }
-
-              await this.updateWeatherData({ lat, lng });
-            });
-            return listItem;
+            await this.fetchWeatherData({ lat, lng });
           });
+          return listItem;
+        });
 
-          autocompleteList.append(...items);
-        } catch (error) {
-          console.error(error);
+        if (items.length === 0) {
+          const listItem = document.createElement("li");
+          listItem.classList.add(
+            "weather__autocomplete-item",
+            "weather__autocomplete-item--not-found"
+          );
+          listItem.textContent = "Локацію не знайдено...";
+          items.push(listItem);
         }
+
+        autocompleteList.append(...items);
       }, 1000);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (e.target !== autocompleteList) {
+        autocompleteList.innerHTML = "";
+      }
     });
   }
 
-  async updateWeatherData({ lat, lng }) {
-    this.status = "loading";
+  async fetchWeatherData({ lat, lng }) {
     try {
+      this.status = "loading";
       const response = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPEN_WEATHER_API_KEY}&units=metric`
       );
       const responseData = await response.json();
       const { temp, pressure, humidity } = responseData.main;
-      this.forecast.temp = temp.toFixed();
-      this.forecast.pressure = (pressure * 0.750063755419211).toFixed();
-      this.forecast.humidity = humidity;
-      this.displayWeatherForecast();
+      this.updateWeatherData({ temp, pressure, humidity });
     } catch (error) {
       console.error(error);
     } finally {
       this.status = "idle";
     }
+  }
+
+  updateWeatherData({ temp, pressure, humidity }) {
+    this.forecast.temp = temp.toFixed();
+    this.forecast.pressure = (pressure * 0.750063755419211).toFixed();
+    this.forecast.humidity = humidity;
+    this.displayWeatherForecast();
   }
 
   displayWeatherForecast() {

@@ -108,6 +108,16 @@ body {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+.weather__autocomplete-item--not-found {
+  cursor: default;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+.weather__autocomplete-item--not-found:hover {
+  background-color: transparent;
+}
+
 .weather__search-control::placeholder {
   color: white;
 }
