@@ -1,4 +1,4 @@
-const OPEN_WEATHER_API_KEY = "d4c95a6ae05e284c2403921a117a8a6f";
+const OPEN_WEATHER_API_KEY = "OPEN_WEATHER_API_KEY";
 
 class WeatherStation {
   constructor({ rootSelector, callbacks = {} }) {
