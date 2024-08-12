@@ -559,5 +559,3 @@ class TaskManager {
 new TaskManager({
   rootSelector: "#root",
 });
-
-// document.body.append(task.elements.container);
