@@ -1,4 +1,4 @@
-const OPEN_WEATHER_API_KEY = "OPEN_WEATHER_API_KEY";
+const OPEN_WEATHER_API_KEY = "d4c95a6ae05e284c2403921a117a8a6f";
 
 class WeatherStation {
   constructor({ rootSelector, callbacks = {} }) {
@@ -82,7 +82,7 @@ class WeatherStation {
     let debounceTimer = null;
 
     searchControl.addEventListener("input", async (e) => {
-      clearInterval(debounceTimer);
+      clearTimeout(debounceTimer);
       autocompleteList.innerHTML = "";
 
       debounceTimer = setTimeout(async () => {
@@ -158,36 +158,60 @@ class WeatherStation {
   }
 
   displayWeatherForecast() {
-    console.log(this.placeName);
-    this.elements.infoPanel.innerHTML = `
-      <h2 class="weather__place-name">${this.placeName}</h2>
-      <ul class="weather__stats-list">
-        <li class="weather__stats-item">
-          <span class="weather__stats-name">Температура</span>
-          <span class="weather__stats-value">
-            ${this.forecast.temp}
-            <em class="weather__stats-unit">°C</em>
-          </span>
-          
-        </li>
-        <li class="weather__stats-item">
-        <span class="weather__stats-name">Атм. тиск</span>
-          <span class="weather__stats-value">
-            ${this.forecast.pressure}
-            <em class="weather__stats-unit">мм</em>
-          </span>
-          
-        </li>
-        <li class="weather__stats-item">
-          <span class="weather__stats-name">Вологість</span>
-          <span class="weather__stats-value">
-            ${this.forecast.humidity}
-            <em class="weather__stats-unit">%</em>
-          </span>
-          
-        </li>
-      </ul>
-    `;
+    this.elements.infoPanel.textContent = "";
+    const { temp, pressure, humidity } = this.forecast;
+    const statsMap = [
+      {
+        label: "Температура",
+        value: temp,
+        unit: "°C",
+      },
+      {
+        label: "Атм. тиск",
+        value: pressure,
+        unit: "мм",
+      },
+      {
+        label: "Вологість",
+        value: humidity,
+        unit: "%",
+      },
+    ];
+
+    const statsTitle = document.createElement("h2");
+    statsTitle.classList.add("weather__place-name");
+    statsTitle.textContent = this.placeName;
+
+    const statsList = document.createElement("ul");
+    statsList.classList.add("weather__stats-list");
+
+    const statsLietElements = statsMap.map((statItem) => {
+      const { label, value, unit } = statItem;
+
+      const statsListItem = document.createElement("li");
+      statsListItem.classList.add("weather__stats-item");
+
+      const statsName = document.createElement("span");
+      statsName.classList.add("weather__stats-name");
+      statsName.textContent = label;
+
+      const statsValue = document.createElement("span");
+      statsValue.classList.add("weather__stats-value");
+      statsValue.textContent = value;
+
+      const statsUnit = document.createElement("em");
+      statsUnit.classList.add("weather__stats-unit");
+      statsUnit.textContent = unit;
+
+      statsValue.append(statsUnit);
+      statsListItem.append(statsName, statsValue);
+
+      return statsListItem;
+    });
+
+    statsList.append(...statsLietElements);
+
+    this.elements.infoPanel.append(statsTitle, statsList);
   }
 }
 
