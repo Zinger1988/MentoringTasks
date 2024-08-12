@@ -1,0 +1,364 @@
+html,
+body {
+  font: 14px/1.4 Roboto, Arial, sans-serif;
+  color: black;
+  margin: 0;
+  padding: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/*#region form elements -----------------------------------*/
+
+.input-text,
+.textarea {
+  color: inherit;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  padding: 8px 0;
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid black;
+  outline: none;
+  background-color: transparent;
+  width: 100%;
+  display: block;
+}
+
+.input-text::placeholder,
+.textarea::placeholder {
+  color: lightgrey;
+}
+
+.textarea {
+  min-height: 100px;
+}
+
+.input-text--white,
+.textarea--white {
+  color: white;
+  border-bottom: 2px solid white;
+}
+
+.input-text:focus,
+.textarea:focus {
+  border-bottom: 2px solid yellow;
+}
+
+/*#endregion form elements -----------------------------------*/
+
+/*#region btn ------------------------------------------------*/
+
+.btn {
+  appearance: button;
+  background-color: black;
+  border: 1px solid black;
+  box-shadow: white 4px 4px 0 0, black 4px 4px 0 1px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  padding: 8px 20px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn:focus,
+.btn:hover {
+  text-decoration: none;
+  text-decoration: none;
+
+  background-color: rgb(60, 60, 60);
+}
+
+.btn:active {
+  outline: 0;
+  box-shadow: #fff 2px 2px 0 0, #000 2px 2px 0 1px;
+  transform: translate(2px, 2px);
+}
+
+.btn--white {
+  background-color: #fff;
+  color: black;
+  box-shadow: black 4px 4px 0 0, white 4px 4px 0 1px;
+}
+
+.btn--white:hover,
+.btn--white:focus {
+  background-color: rgb(230, 230, 230);
+}
+
+.btn--yellow {
+  background-color: yellow;
+  color: black;
+}
+
+.btn--yellow:hover,
+.btn--yellow:focus {
+  background-color: rgb(235, 235, 0);
+}
+
+.btn--grey {
+  background-color: rgb(228, 228, 228);
+  color: black;
+}
+
+.btn--grey:hover,
+.btn--grey:focus {
+  background-color: rgb(216, 216, 216);
+}
+
+.btn--small {
+  font-size: 10px;
+  line-height: 16px;
+  padding: 6px 16px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.btn--large {
+  font-size: 14px;
+  line-height: 20px;
+  padding: 14px 28px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/*#endregion btn ---------------------------------------------*/
+
+/*#region task-manager ---------------------------------------*/
+
+.task-manager {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+.task-manager__sort {
+  grid-column: 1 / -1;
+  border-bottom: 1px solid #e4e4e4;
+}
+
+.task-manager__main {
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.task-manager__list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid black;
+}
+
+.task-manager__list-item {
+  border-bottom: 1px solid black;
+}
+
+.task-manager__list-item:last-child {
+  border-bottom: none;
+}
+
+/*#endregion task-manager ------------------------------------*/
+
+/*#region filters --------------------------------------------*/
+
+.filters {
+  background: #fafafa;
+  border-right: 1px solid #e4e4e4;
+  padding: 30px;
+}
+
+.filters__title {
+  font-weight: 600;
+  font-size: 16px;
+  margin: 0 0 14px;
+}
+
+.filters__title::first-letter {
+  text-transform: uppercase;
+}
+
+.filters__item {
+  margin: 0 0 8px;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+}
+
+.filters__control {
+  cursor: pointer;
+}
+
+.filters__group {
+  margin: 0 0 24px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid #e4e4e4;
+}
+
+/*#endregion filters -----------------------------------------*/
+
+/*#region sort -----------------------------------------------*/
+
+.sort {
+  padding: 20px 40px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.sort__prefix {
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+/*#endregion sort --------------------------------------------*/
+
+/*#region task -----------------------------------------------*/
+
+.task {
+  padding: 36px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto 1fr;
+  align-items: start;
+  align-content: start;
+  gap: 12px 24px;
+}
+
+.task__title {
+  font-size: 20px;
+  line-height: 24px;
+  grid-column: 1 / 2;
+  grid-row: 1 / 1;
+  margin: 0;
+}
+
+.task__description {
+  grid-column: 1 / 1;
+  margin: 0;
+}
+
+.task__priority {
+  display: flex;
+  gap: 16px;
+  grid-column: 2 / 2;
+  grid-row: 1 / 1;
+}
+
+.task__priority-value {
+  text-transform: uppercase;
+  font-weight: 600;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 4px 12px;
+  min-width: 98px;
+  flex: 1 0 auto;
+}
+
+.task__priority-value::before {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.task__priority--low .task__priority-value {
+  background-color: #9df8ff;
+  color: #30657e;
+  box-shadow: white 4px 4px 0 0, #b7f1ff 4px 4px 0 1px;
+}
+
+.task__priority--medium .task__priority-value {
+  background-color: #ffb656;
+  color: #412f12;
+  box-shadow: white 4px 4px 0 0, #ffb656 4px 4px 0 1px;
+}
+
+.task__priority--high .task__priority-value {
+  background-color: #ff7373;
+  color: #3a1313;
+  box-shadow: white 4px 4px 0 0, #ff7373 4px 4px 0 1px;
+}
+
+.task__priority--low .task__priority-value::before {
+  content: "▲";
+}
+
+.task__priority--medium .task__priority-value::before {
+  content: "▲▲";
+}
+
+.task__priority--high .task__priority-value::before {
+  content: "▲▲▲";
+}
+
+.task__priority-btn {
+  font-size: 0;
+}
+
+.task__priority-btn:hover {
+  color: white;
+  background-color: black;
+}
+
+.task__priority-increase::before,
+.task__priority-decrease::before {
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.task__priority-increase::before {
+  content: "+";
+}
+
+.task__priority-decrease::before {
+  content: "-";
+}
+
+.task__priority-btn--hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.task__status {
+  display: flex;
+  gap: 16px;
+  grid-column: 1 / 1;
+  grid-row: 3 / -1;
+}
+
+.task__delete {
+  grid-column: 2 / -1;
+  grid-row: 3 / -1;
+}
+
+/*#endregion task --------------------------------------------*/
+
+/*#region add-form -------------------------------------------*/
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  background-color: black;
+  padding: 30px 30px 40px;
+  color: white;
+}
+
+/*#endregion add-form ----------------------------------------*/
