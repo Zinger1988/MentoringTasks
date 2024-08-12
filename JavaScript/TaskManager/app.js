@@ -250,8 +250,6 @@ class TaskManager {
 
       return instance;
     });
-
-    console.log(this.tasks);
   }
 
   #renderTasks() {
@@ -299,13 +297,15 @@ class TaskManager {
        * Calculating the available options and their values
        * for applying them to the filter panel
        */
-      Object.keys(task.options).forEach((key) => {
-        const optionVariants = task.options[key].variants
-        .reduce((acc, optName) => ({ ...acc, [optName]: false}), {});
 
-        this.filters[key] = this.filters[key]
-          ? { ...this.filters[key], ...optionVariants }
-          : optionVariants;
+      Object.keys(task.options).forEach((key) => {
+        if (!this.filters[key]) {
+          this.filters[key] = {};
+        }
+
+        task.options[key].variants.forEach((optName) => {
+          this.filters[key][optName] = false;
+        });
       });
 
       return task;
@@ -374,14 +374,17 @@ class TaskManager {
      * Calculating the intersection between the applied filters
      * and the current value of the option in the task
      */
-    const result = Object.entries(activeFilters).reduce((acc, entry) => {
-      const [activeFilterName, activeFilterValues] = entry;
-      return activeFilterValues.length === 0
-        ? acc
-        : acc.filter((task) =>
-            activeFilterValues.includes(task.options[activeFilterName].value)
-          );
-    }, this.tasks);
+    const filterCriteria = Object.entries(activeFilters)
+      .filter(([_, values]) => values.length > 0) // тут відкинемо фільтри
+      .map(
+        ([name, values]) =>
+          (task) =>
+            values.includes(task.options[name].value)
+      );
+
+    const result = this.tasks.filter((task) =>
+      filterCriteria.every((criteria) => criteria(task))
+    );
 
     return result;
   }
